@@ -6,29 +6,52 @@ using System.Text;
 using System.Threading.Tasks;
 using COD_Base.Interface;
 using COD_Base.Util;
+using System.Threading;
 
 namespace COD_Base.Core
 {
     /// <summary>
-    /// 需要解决的问题：改成多线程模式，Metric的计算维护，是不是还要一个Unregist的方法，Error事件还没有处理者
+    /// 需要解决的问题：Metric的计算维护，Error事件还没有处理者(这是前台的问题了)
     /// </summary>
     class AlgorithmMgr : IAlgorithmManager
     {
-        private static AlgorithmMgr algMgr = new AlgorithmMgr();
+        private static AlgorithmMgr instance;
         private AlgorithmMgr()
         {
             _algorithmList = new ArrayList();
             _metricsForAlgorithm = new Hashtable();
-            MaxAlgorithmID = -1;
+            ID = GetType().ToString();
+            Logger.GetInstance().Info(ID, " instantiated.");
         }
-        public AlgorithmMgr GetInstance()
+        public static AlgorithmMgr GetInstance()
         {
-            return algMgr;
+            if(instance == null)
+            {
+                instance = new AlgorithmMgr();
+                instance.Initialize();
+            }
+            return instance;
         }
 
         private ArrayList _algorithmList;
+        /// <summary>
+        /// 算法线程引用列表，方便对线程进行操作，目前暂时没有实现的需求
+        /// </summary>
+        private ArrayList _algorithmThreadList;
         private Hashtable _metricsForAlgorithm;
         private int MaxAlgorithmID;
+        public string ID;
+
+        /// <summary>
+        /// 在<see cref="GetInstance"/>的lazy实例化后调用，用以初始化一些变量
+        /// </summary>
+        public void Initialize()
+        {
+            MaxAlgorithmID = -1;
+            EventType[] etList = { EventType.NewTupleArrive, EventType.OldTupleDepart, EventType.WindowSlide, EventType.NoMoreTuple };
+            RegistToDistributor(EventDistributor.GetInstance(), etList);
+        }
+
         public ArrayList Algorithms
         {
             get
@@ -65,6 +88,10 @@ namespace COD_Base.Core
                     OnWindowSlide((IWindow)anEvent.GetAttribute(AttributeType.Window));
                     break;
 
+                case EventType.NoMoreTuple:
+                    OnDisposal();
+                    break;
+
                 default:
                     //无法处理的Event种类
                     HandleUnknownEventType(anEvent.Type.ToString());
@@ -72,11 +99,18 @@ namespace COD_Base.Core
             }
         }
 
+        /// <summary>
+        /// 对于Metric的问题，我想在Algorithm里面实现
+        /// </summary>
+        /// <param name="p"></param>
         public void OnNewTupleArriveEvent(ITuple p)
         {
             foreach(IAlgorithm algorithm in _algorithmList)
             {
-                algorithm.Arrive(p, p.ArrivalStep);
+                Thread thread = new Thread(() => algorithm.Arrive(p, StreamSimulator.GetInstance().CurrentStep));
+                thread.IsBackground = true;
+                thread.Start();
+                thread.Join();
             }
         }
 
@@ -84,7 +118,10 @@ namespace COD_Base.Core
         {
             foreach (IAlgorithm algorithm in _algorithmList)
             {
-                algorithm.Departure(p, p.ArrivalStep);
+                Thread thread = new Thread(() => algorithm.Departure(p, StreamSimulator.GetInstance().CurrentStep));
+                thread.IsBackground = true;
+                thread.Start();
+                thread.Join();
             }
         }
 
@@ -92,7 +129,21 @@ namespace COD_Base.Core
         {
             foreach (IAlgorithm algorithm in _algorithmList)
             {
-                algorithm.WindowSlide(newWindow);
+                Thread thread = new Thread(() => algorithm.WindowSlide(newWindow));
+                thread.IsBackground = true;
+                thread.Start();
+                thread.Join();
+            }
+        }
+
+        /// <summary>
+        /// 释放引用算法分配的内存及自己的内存，在<see cref="EventType.NoMoreTuple"/>事件发出后调用
+        /// </summary>
+        private void OnDisposal()
+        {
+            foreach (IAlgorithm algorithm in _algorithmList)
+            {
+                algorithm.Dispose();
             }
         }
 
@@ -103,14 +154,6 @@ namespace COD_Base.Core
             _metricsForAlgorithm.Add(algorithmKey, new ExpMetrics());
         }
         
-        /// <summary>
-        /// 由于采用单例模式，不需要注册了
-        /// </summary>
-        /// <param name="eventDistributor"></param>
-        public void RegistToDistributor(IEventDIstributor eventDistributor)
-        {
-            throw new NotImplementedException();
-        }
 
         private void HandleUnknownEventType(string eventType)
         {
@@ -118,8 +161,12 @@ namespace COD_Base.Core
             string errorMsg = "A Unknown type of event was send to algorithmMgr,EventType : " + eventType;
             error.AddAttribute(AttributeType.ErrorMessage, errorMsg);
             EventDistributor.GetInstance().SendEvent(error);
-            Logger.GetInstance().Warn(errorMsg);
+            Logger.GetInstance().Warn(ID, errorMsg);
         }
 
+        public void RegistToDistributor(IEventDIstributor eventDistributor, EventType[] acceptedEventType)
+        {
+            eventDistributor.SubcribeListenerWithFullAcceptedTypeList(this, acceptedEventType);
+        }
     }
 }

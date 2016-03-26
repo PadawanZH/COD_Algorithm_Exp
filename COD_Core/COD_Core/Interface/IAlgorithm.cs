@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace COD_Base.Interface
 {
-    public interface IAlgorithm
+    public interface IAlgorithm : IDisposable
     {
         string Description { get; }
         /// <summary>

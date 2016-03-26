@@ -3,6 +3,7 @@ using System.Collections;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using COD_Base.Core;
 
 
 namespace COD_Base
@@ -11,8 +12,7 @@ namespace COD_Base
     {
         public static void Main(string[] Args)
         {
-            Class2 n = new Class2();
-            n.print2();
+            AlgorithmMgr.GetInstance();
             Console.ReadKey();
         }
 

@@ -23,5 +23,7 @@ namespace COD_Base.Interface
         void Subscribe(IListener listener, EventType eventType);
         void UnSubscribe(IListener listener, EventType eventType);
 
+        void SubcribeListenerWithFullAcceptedTypeList(IListener listener, EventType[] acceptedList);
+
     }
 }

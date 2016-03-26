@@ -14,15 +14,21 @@ namespace COD_Base.Util
         /// <summary>
         /// 单例模式引用
         /// </summary>
-        private volatile static Logger logger = new Logger();
+        private volatile static Logger instance;
         private Logger()
         {
             _logDirPath = System.Environment.CurrentDirectory;
-            logger.RunnLogFilePath = _logDirPath + "\\RunLog.log";
+            RunnLogFilePath = _logDirPath + "\\RunLog.log";
+
+            Init();
         }
         public static Logger GetInstance()
         {
-            return logger;
+            if(instance == null)
+            {
+                instance = new Logger();
+            }
+            return instance;
         }
 
         private string _logDirPath;
@@ -49,16 +55,16 @@ namespace COD_Base.Util
                 }
                 else
                 {
-                    logFileWriter = new StreamWriter(_runLogFilePath);
+                    //以append模式写log文件
+                    logFileWriter = new StreamWriter(_runLogFilePath, true);
                 }
             }
-
         }
 
-        public void WriteLog(LogLevel level, string msg)
+        public void WriteLog(string sourceID, LogLevel level, string msg)
         {
             string time = DateTime.Now.ToShortDateString() + " " + DateTime.Now.ToLongTimeString();
-            string line = "[" + level.ToString() + " || " + time + "]";
+            string line = "[" + level.ToString() + " || " + time + "] { " + sourceID + " } ==> ";
             line += msg;
             lock (mutex)
             {
@@ -71,24 +77,29 @@ namespace COD_Base.Util
             }
         }
 
-        public void Debug(string msg)
+        public void Debug(string sourceID, string msg)
         {
-            WriteLog(LogLevel.DEBUG, msg);
+            WriteLog(sourceID, LogLevel.DEBUG, msg);
         }
 
-        public void Info(string msg)
+        public void Info(string sourceID, string msg)
         {
-            WriteLog(LogLevel.INFO, msg);
+            WriteLog(sourceID, LogLevel.INFO, msg);
         }
 
-        public void Warn(string msg)
+        public void Warn(string sourceID, string msg)
         {
-            WriteLog(LogLevel.WARN, msg);
+            WriteLog(sourceID, LogLevel.WARN, msg);
         }
 
-        public void Error(string msg)
+        public void Error(string sourceID, string msg)
         {
-            WriteLog(LogLevel.ERROR, msg);
+            WriteLog(sourceID, LogLevel.ERROR, msg);
+        }
+
+        public void Init()
+        {
+            WriteLog("Initialization", LogLevel.INIT, "New Running in time : " + " " + DateTime.Now.ToShortDateString() + " " + DateTime.Now.ToShortTimeString());
         }
         public void Dispose()
         {
