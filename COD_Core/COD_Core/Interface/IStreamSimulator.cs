@@ -22,7 +22,7 @@ namespace COD_Base.Interface
         int CurrentStep { get; }
 
         /// <summary>
-        /// Tuple到来之间的间隔，可以通过外部调用来调节
+        /// Tuple到来之间的间隔，可以通过外部调用来调节,in milisecond
         /// </summary>
         double StreamRate { get; set; }
 
@@ -45,7 +45,7 @@ namespace COD_Base.Interface
         /// <summary>
         /// 作为流数据模拟的步骤函数,调用<see cref="IDataAdapter.GetNextTuple"/>取得下一个tuple，负责维护Window
         /// </summary>
-        void PerformAStep();
+        void PerformAStep(ITuple newTuple);
 
         /// <summary>
         /// 维护窗口，当其认为窗口滑动，则调用<see cref="IStreamSimulator.OnWindowSlide"/>。

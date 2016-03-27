@@ -33,13 +33,13 @@ namespace COD_Base.Core
             return instance;
         }
 
-        private ArrayList _algorithmList;
+        protected ArrayList _algorithmList;
         /// <summary>
         /// 算法线程引用列表，方便对线程进行操作，目前暂时没有实现的需求
         /// </summary>
-        private ArrayList _algorithmThreadList;
-        private Hashtable _metricsForAlgorithm;
-        private int MaxAlgorithmID;
+        protected ArrayList _algorithmThreadList;
+        protected Hashtable _metricsForAlgorithm;
+        protected int MaxAlgorithmID;
         public string ID;
 
         /// <summary>
@@ -77,15 +77,15 @@ namespace COD_Base.Core
             switch (anEvent.Type)
             {
                 case EventType.NewTupleArrive:
-                    OnNewTupleArriveEvent( (ITuple)anEvent.GetAttribute(AttributeType.Tuple) );
+                    OnNewTupleArriveEvent( (ITuple)anEvent.GetAttribute(EventAttributeType.Tuple) );
                     break;
 
                 case EventType.OldTupleDepart:
-                    OnOldTupleDepartEvent((ITuple)anEvent.GetAttribute(AttributeType.Tuple));
+                    OnOldTupleDepartEvent((ITuple)anEvent.GetAttribute(EventAttributeType.Tuple));
                     break;
 
                 case EventType.WindowSlide:
-                    OnWindowSlide((IWindow)anEvent.GetAttribute(AttributeType.Window));
+                    OnWindowSlide((IWindow)anEvent.GetAttribute(EventAttributeType.Window));
                     break;
 
                 case EventType.NoMoreTuple:
@@ -139,7 +139,7 @@ namespace COD_Base.Core
         /// <summary>
         /// 释放引用算法分配的内存及自己的内存，在<see cref="EventType.NoMoreTuple"/>事件发出后调用
         /// </summary>
-        private void OnDisposal()
+        protected void OnDisposal()
         {
             foreach (IAlgorithm algorithm in _algorithmList)
             {
@@ -151,15 +151,15 @@ namespace COD_Base.Core
         {
             _algorithmList.Add(newAlgorithm);
             int algorithmKey = _algorithmList.LastIndexOf(newAlgorithm);
-            _metricsForAlgorithm.Add(algorithmKey, new ExpMetrics());
+            _metricsForAlgorithm.Add(algorithmKey, new ComputeMetrics());
         }
-        
 
-        private void HandleUnknownEventType(string eventType)
+
+        protected void HandleUnknownEventType(string eventType)
         {
             Event error = new Event(this.ToString(), EventType.Error);
             string errorMsg = "A Unknown type of event was send to algorithmMgr,EventType : " + eventType;
-            error.AddAttribute(AttributeType.ErrorMessage, errorMsg);
+            error.AddAttribute(EventAttributeType.ErrorMessage, errorMsg);
             EventDistributor.GetInstance().SendEvent(error);
             Logger.GetInstance().Warn(ID, errorMsg);
         }

@@ -54,12 +54,12 @@ namespace COD_Base.Core
             }
         }
 
-        public object GetAttribute(AttributeType key)
+        public object GetAttribute(EventAttributeType key)
         {
             return _attributeTable[key];
         }
 
-        public void AddAttribute(AttributeType key, Object value)
+        public void AddAttribute(EventAttributeType key, Object value)
         {
             _attributeTable.Add(key, value);
         }

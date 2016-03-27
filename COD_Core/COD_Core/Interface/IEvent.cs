@@ -17,7 +17,7 @@ namespace COD_Base.Interface
         Error = 6
     }
 
-    public enum AttributeType
+    public enum EventAttributeType
     {
         ErrorMessage,
         Tuple,
@@ -41,6 +41,6 @@ namespace COD_Base.Interface
         /// </summary>
         /// <param name="key">键值</param>
         /// <returns>返回的信息Object</returns>
-        object GetAttribute(AttributeType key);
+        object GetAttribute(EventAttributeType key);
     }
 }

@@ -49,8 +49,12 @@
     <Compile Include="Core\AlgorithmMgr.cs" />
     <Compile Include="Core\Event.cs" />
     <Compile Include="Core\EventDistributor.cs" />
+    <Compile Include="Dynamic\DataAccess\ForestConvertAdapter.cs" />
+    <Compile Include="Dynamic\Entity\Tuple.cs" />
     <Compile Include="Interface\IWindow.cs" />
-    <Compile Include="Util\ExpMetrics.cs" />
+    <Compile Include="Util\ComputeMetrics.cs" />
+    <Compile Include="Util\Configuration.cs" />
+    <Compile Include="Util\ExceptionUtil.cs" />
     <Compile Include="Util\Logger.cs" />
     <Compile Include="Core\StreamSimulator.cs" />
     <Compile Include="Interface\IAlgorithmManager.cs" />
@@ -69,6 +73,9 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="ClassDiagram1.cd" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="Dynamic\DataAccess\ForestConvertType\Forest CoverType 数据说明.txt" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

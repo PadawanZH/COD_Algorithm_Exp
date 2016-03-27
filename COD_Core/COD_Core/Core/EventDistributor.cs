@@ -33,7 +33,7 @@ namespace COD_Base.Core
         /// <summary>
         /// 其中eventType为key，subscribe这种eventtype的的listener列表为value
         /// </summary>
-        private Hashtable _eventTable;
+        protected Hashtable _eventTable;
         public string ID;
 
         /// <summary>

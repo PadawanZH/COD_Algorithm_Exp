@@ -1,5 +1,5 @@
 ﻿using System;
-using System.Collections;
+using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -16,15 +16,15 @@ namespace COD_Base.Interface
     /// </summary>
     public interface ITuple
     {
-        int ID { get; }
-        int ArrivalStep { get; }
-        int DepartStep { get; }
+        int ID { get; set; }
+        int ArrivalStep { get; set; }
+        int DepartStep { get; set; }
         bool IsOutlier { get; set; }
         bool CanBeRangeQueried { get; set; }
 
         /// <summary>
         /// 各维度的数据，以下标作为一个维度
         /// </summary>
-        ArrayList Data { get; }
+        List<double> Data { get; set; }
     }
 }

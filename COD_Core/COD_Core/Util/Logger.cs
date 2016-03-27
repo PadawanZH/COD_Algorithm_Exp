@@ -31,14 +31,14 @@ namespace COD_Base.Util
             return instance;
         }
 
-        private string _logDirPath;
-        private string _runLogFilePath;
-        private StreamWriter logFileWriter;
+        protected string _logDirPath;
+        protected string _runLogFilePath;
+        protected StreamWriter logFileWriter;
 
         /// <summary>
         /// 由于Logger使用单例模式，加锁的辅助object可以不是全局的，因为各个Thread得到的mutex都是同一个实例
         /// </summary>
-        private readonly object mutex = new object();
+        protected readonly object mutex = new object();
 
         public string RunnLogFilePath
         {
@@ -69,7 +69,7 @@ namespace COD_Base.Util
             lock (mutex)
             {
                 Console.WriteLine(line);
-                if(logFileWriter != null)
+                if (logFileWriter != null)
                 {
                     logFileWriter.WriteLine(line);
                     logFileWriter.Flush();

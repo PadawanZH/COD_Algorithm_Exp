@@ -8,11 +8,11 @@ namespace COD_Base.Interface
 {
     public interface IDataAdapter
     {
-        int Dimension { get; }
-        string DataFilePath { get; }
+        int Dimension { get; set; }
+        string DataFilePath { get; set; }
 
 
-        bool Init();
+        void Init();
         ITuple CovertTuple(string data);
 
         ITuple GetNextTuple();
@@ -21,6 +21,6 @@ namespace COD_Base.Interface
         /// 释放占用的资源，关于该文件被多线程同时读的时候怎么办有待解决，如何实现多线程运行不同算法的环境？如何多线程读取同一个文件？
         /// </summary>
         /// <returns></returns>
-        bool Disposal();
+        void Disposal();
     }
 }

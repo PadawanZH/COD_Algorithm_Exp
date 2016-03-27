@@ -8,7 +8,10 @@ using COD_Base.Interface;
 
 namespace COD_Base.Util
 {
-    class ExpMetrics : IExpMetrics
+    /// <summary>
+    /// 提供指标计算的方法
+    /// </summary>
+    class ComputeMetrics
     {
 
     }
