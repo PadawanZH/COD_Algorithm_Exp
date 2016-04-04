@@ -51,6 +51,7 @@
     <Compile Include="Core\EventDistributor.cs" />
     <Compile Include="Dynamic\DataAccess\ForestConvertAdapter.cs" />
     <Compile Include="Dynamic\Entity\Tuple.cs" />
+    <Compile Include="Experiment\PerformanceTest.cs" />
     <Compile Include="Interface\IWindow.cs" />
     <Compile Include="Util\ComputeMetrics.cs" />
     <Compile Include="Util\Configuration.cs" />

@@ -19,12 +19,12 @@ namespace COD_Base.Dynamic.Entity
         {
             get
             {
-                throw new NotImplementedException();
+                return _arrivalStep;
             }
 
             set
             {
-                throw new NotImplementedException();
+                _arrivalStep = value;
             }
         }
 
@@ -32,12 +32,12 @@ namespace COD_Base.Dynamic.Entity
         {
             get
             {
-                throw new NotImplementedException();
+                return _canBeQueried;
             }
 
             set
             {
-                throw new NotImplementedException();
+                _canBeQueried = value;
             }
         }
 
@@ -45,11 +45,11 @@ namespace COD_Base.Dynamic.Entity
         {
             get
             {
-                throw new NotImplementedException();
+                return _data;
             }
             set
             {
-                throw new NotImplementedException();
+                _data = value;
             }
         }
 
@@ -57,25 +57,12 @@ namespace COD_Base.Dynamic.Entity
         {
             get
             {
-                throw new NotImplementedException();
+                return _departStep;
             }
 
             set
             {
-                throw new NotImplementedException();
-            }
-        }
-
-        public int ID
-        {
-            get
-            {
-                throw new NotImplementedException();
-            }
-
-            set
-            {
-                throw new NotImplementedException();
+                _departStep = value;
             }
         }
 
@@ -83,12 +70,12 @@ namespace COD_Base.Dynamic.Entity
         {
             get
             {
-                throw new NotImplementedException();
+                return _isOutlier;
             }
 
             set
             {
-                throw new NotImplementedException();
+                _isOutlier = value;
             }
         }
     }

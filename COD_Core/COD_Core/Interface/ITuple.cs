@@ -16,7 +16,6 @@ namespace COD_Base.Interface
     /// </summary>
     public interface ITuple
     {
-        int ID { get; set; }
         int ArrivalStep { get; set; }
         int DepartStep { get; set; }
         bool IsOutlier { get; set; }

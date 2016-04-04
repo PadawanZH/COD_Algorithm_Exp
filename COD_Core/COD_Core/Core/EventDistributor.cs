@@ -44,6 +44,10 @@ namespace COD_Base.Core
             
         }
 
+        /// <summary>
+        /// 没有实现
+        /// </summary>
+        /// <param name="anEvent"></param>
         public void SendEvent(IEvent anEvent)
         {
             ArrayList listenerListToSend = (ArrayList)_eventTable[anEvent.Type];

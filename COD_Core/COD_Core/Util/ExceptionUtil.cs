@@ -13,7 +13,7 @@ namespace COD_Base.Util
         public static void SendErrorEventAndLog(string sendDestription, string errorMsg)
         {
             Event errorEvent = new Event(sendDestription, EventType.Error);
-            errorEvent.AddAttribute(EventAttributeType.ErrorMessage, errorMsg);
+            errorEvent.AddAttribute(EventAttributeType.Message, errorMsg);
             EventDistributor.GetInstance().SendEvent(errorEvent);
 
             Logger.GetInstance().Error(sendDestription, errorMsg);

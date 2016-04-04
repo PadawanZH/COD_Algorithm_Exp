@@ -7,12 +7,13 @@ using System.Threading;
 
 namespace COD_Base
 {
-    class Class2
+    using System;
+    using System.Threading;
+
+    public class Example
     {
-        public void print2()
+        public static void Main()
         {
-            Class3 n = new Class3();
-            n.print();
         }
     }
 }

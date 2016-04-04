@@ -35,11 +35,6 @@ namespace COD_Base.Interface
         int WindowSize { get; }
         #endregion
 
-        /// <summary>
-        /// 作为对外的接口，开始读取流数据并进行模拟，应当另开一个线程，以StreamRate进行流数据模拟
-        /// </summary>
-        void StartStreamSimulate();
-
         void PauseSimulate();
 
         /// <summary>
@@ -58,11 +53,6 @@ namespace COD_Base.Interface
         void OnWindowSlide();
         void OnNewTupleArrive();
         void OnOldTupleDepart();
-
-        /// <summary>
-        /// 发送Event，一般是维护一个hashtable，key为eventtype，value为IListener的k-v对
-        /// </summary>
-        void SendEvent(IEvent anEvent);
 
     }
 }

@@ -20,8 +20,7 @@ namespace COD_Base.Core
         {
             _algorithmList = new ArrayList();
             _metricsForAlgorithm = new Hashtable();
-            ID = GetType().ToString();
-            Logger.GetInstance().Info(ID, " instantiated.");
+            Logger.GetInstance().Info(GetType().ToString(), " instantiated.");
         }
         public static AlgorithmMgr GetInstance()
         {
@@ -40,7 +39,6 @@ namespace COD_Base.Core
         protected ArrayList _algorithmThreadList;
         protected Hashtable _metricsForAlgorithm;
         protected int MaxAlgorithmID;
-        public string ID;
 
         /// <summary>
         /// 在<see cref="GetInstance"/>的lazy实例化后调用，用以初始化一些变量
@@ -154,14 +152,14 @@ namespace COD_Base.Core
             _metricsForAlgorithm.Add(algorithmKey, new ComputeMetrics());
         }
 
-
+        
         protected void HandleUnknownEventType(string eventType)
         {
             Event error = new Event(this.ToString(), EventType.Error);
             string errorMsg = "A Unknown type of event was send to algorithmMgr,EventType : " + eventType;
-            error.AddAttribute(EventAttributeType.ErrorMessage, errorMsg);
+            error.AddAttribute(EventAttributeType.Message, errorMsg);
             EventDistributor.GetInstance().SendEvent(error);
-            Logger.GetInstance().Warn(ID, errorMsg);
+            Logger.GetInstance().Warn(GetType().ToString(), errorMsg);
         }
 
         public void RegistToDistributor(IEventDIstributor eventDistributor, EventType[] acceptedEventType)

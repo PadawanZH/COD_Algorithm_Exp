@@ -14,12 +14,16 @@ namespace COD_Base.Interface
         OutlierStateChange = 3,
         NoMoreTuple = 4,
         DataChanged = 5,
-        Error = 6
+        Error = 6,
+        /// <summary>
+        /// 作为界面显示消息的MessageBox使用
+        /// </summary>
+        Informative = 7
     }
 
     public enum EventAttributeType
     {
-        ErrorMessage,
+        Message,
         Tuple,
         Window
     }

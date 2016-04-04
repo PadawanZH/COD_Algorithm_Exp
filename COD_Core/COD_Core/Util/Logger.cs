@@ -68,7 +68,9 @@ namespace COD_Base.Util
             line += msg;
             lock (mutex)
             {
-                Console.WriteLine(line);
+                if(level == LogLevel.ERROR)
+                    Console.WriteLine(line);
+
                 if (logFileWriter != null)
                 {
                     logFileWriter.WriteLine(line);
@@ -99,7 +101,7 @@ namespace COD_Base.Util
 
         public void Init()
         {
-            WriteLog("Initialization", LogLevel.INIT, "New Running in time : " + " " + DateTime.Now.ToShortDateString() + " " + DateTime.Now.ToShortTimeString());
+            WriteLog(GetType().ToString(), LogLevel.INIT, "New Running in time : " + " " + DateTime.Now.ToShortDateString() + " " + DateTime.Now.ToShortTimeString());
         }
         public void Dispose()
         {

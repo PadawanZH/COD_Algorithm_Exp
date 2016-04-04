@@ -6,6 +6,7 @@ using System.Threading;
 using COD_Base.Interface;
 using COD_Base.Util;
 
+
 namespace COD_Base.Core
 {
     /// <summary>
@@ -16,7 +17,7 @@ namespace COD_Base.Core
         private static StreamSimulator instance;
         private StreamSimulator()
         {
-            
+            isRunningTimerMode = false;
         }
 
         public static StreamSimulator GetInstance()
@@ -34,11 +35,75 @@ namespace COD_Base.Core
         /// </summary>
         public void Initialize()
         {
+            _curStreamStep = 0;
+            _isProcessOver = false;
+
             ToDoBuffer = new Queue<ITuple>();
-            
-            millisecondsTimeoutOfWaitLock = 1000;
+
+            _periodTimeBetweenTuple = 1000;
+            millisecondsTimeoutOfWaitLock = _periodTimeBetweenTuple;
+
+            Dynamic.DataAccess.ForestConvertTypeAdaptor temp = new Dynamic.DataAccess.ForestConvertTypeAdaptor();
+            temp.TestInit();
+            _dataAdapter = temp;
+
+            simulateTimer = new Timer(new TimerCallback(TimerThreadFunc), this, Timeout.Infinite, _periodTimeBetweenTuple);
+            tupleHandleThread = new Thread(TupleProcessorThreadFunc);
         }
 
+        /// <summary>
+        /// 标记Algorithm是否在Timer的情况下运行（即是否在StreamSimulator的模拟流的情况下运行），当此值为false时，才可在运行<see cref="Experiment.PerformanceTest"/>中的静态数据模式
+        /// </summary>
+        public bool isRunningTimerMode;
+
+        public void StartSimulationInTimerMode()
+        {
+            if(!isRunningTimerMode)
+            {   
+                simulateTimer.Change(0, _periodTimeBetweenTuple);
+                Console.WriteLine("Timer Start");
+                Thread.Sleep(10);
+                tupleHandleThread.Start();
+                isRunningTimerMode = true;
+            }
+            else
+            {
+                Event e = new Event(GetType().ToString(), EventType.Informative);
+                e.AddAttribute(EventAttributeType.Message, "Already running in timer mode");
+                EventDistributor.GetInstance().SendEvent(e);
+            }
+        }
+
+        public void StopTimerModeSimulation()
+        {
+            if(isRunningTimerMode)
+            {
+                //To-do 实现停止Timer
+                simulateTimer.Change(Timeout.Infinite, _periodTimeBetweenTuple);
+                //To-do 重新恢复初始化时各个组件状态（如状态变量、DataAdapter的文件指针等）
+                ResetState();
+
+                isRunningTimerMode = false;
+            }
+            else
+            {
+                Event e = new Event(GetType().ToString(), EventType.Informative);
+                e.AddAttribute(EventAttributeType.Message, "Simulation is not running in timer mode right now");
+                EventDistributor.GetInstance().SendEvent(e);
+            }
+        }
+
+        private void ResetState()
+        {
+            if (tupleHandleThread.IsAlive)
+            {
+                tupleHandleThread.Abort();
+            }
+            _dataAdapter.Disposal();
+
+            Initialize();
+        }
+        
         //这些变量应该由Configuration处获得
         protected int _curStreamStep;
         protected bool _isProcessOver;
@@ -47,7 +112,7 @@ namespace COD_Base.Core
         /// <summary>
         /// time interval of get 
         /// </summary>
-        protected double _streamRate;
+        protected int _periodTimeBetweenTuple;
         protected int _windowSize;
 
         /// <summary>
@@ -56,6 +121,9 @@ namespace COD_Base.Core
         protected Queue<ITuple> ToDoBuffer;
 
         protected int millisecondsTimeoutOfWaitLock;
+
+        protected Timer simulateTimer;
+        protected Thread tupleHandleThread;
 
         /// <summary>
         /// _dataApapter的类型可能需要在界面上赋值（路径 + dataAdapter类型），具体学习SimulationCompution的做法.
@@ -75,34 +143,37 @@ namespace COD_Base.Core
         /// 还有第二种解决方案（这里没有实现），可以实现一个Buffer，在进入临界区时使用tryLock方式（<see cref="System.Threading.Monitor.TryEnter"/>）,
         /// 若lock已被占用，则将新tuple存入buffer中，产生真正的BackPressure。
         /// </summary>
-        protected void TimerThreadFunc()
+        protected void TimerThreadFunc(object state)
         {
             ITuple newTuple = _dataAdapter.GetNextTuple();
-            if(Monitor.TryEnter(mutex))
+            if(newTuple != null)
             {
-                try
+                if (Monitor.TryEnter(mutex))
                 {
-                    //critical section start
-                    ToDoBuffer.Enqueue(newTuple);
-                    //唤醒可能等待的消费者线程
-                    Monitor.Pulse(mutex);
+                    try
+                    {
+                        //critical section start
+                        ToDoBuffer.Enqueue(newTuple);
+                        //唤醒可能等待的消费者线程
+                        Monitor.Pulse(mutex);
+                    }
+                    catch (Exception e)
+                    {
+                        ExceptionUtil.SendErrorEventAndLog(GetType().ToString(), "Something occured while timer thread in StreamSimulator try to acquire the mutex lock. Exception Message : " + e.Message);
+                    }
+                    finally
+                    {
+                        Monitor.Exit(mutex);
+                    }
                 }
-                catch (Exception e)
+                else
                 {
-                    ExceptionUtil.SendErrorEventAndLog(GetType().ToString(), "Something occured while timer thread in StreamSimulator try to acquire the mutex lock. Exception Message : " + e.Message);
-                }
-                finally
-                {
-                    Monitor.Exit(mutex);
-                }
-            }
-            else
-            {
-                //没有获得锁表面消费者正在运行，无需唤醒。
-                //Queue不是线程安全的，由于这里没有获得锁，所以不会发生死锁的问题
-                lock (ToDoBuffer)
-                {
-                    ToDoBuffer.Enqueue(newTuple);
+                    //没有获得锁表面消费者正在运行，无需唤醒。
+                    //Queue不是线程安全的，由于这里没有获得锁，所以不会发生死锁的问题
+                    lock (ToDoBuffer)
+                    {
+                        ToDoBuffer.Enqueue(newTuple);
+                    }
                 }
             }
         }
@@ -131,7 +202,6 @@ namespace COD_Base.Core
                         }
                         newTuple.ArrivalStep = CurrentStep;
                         newTuple.DepartStep = GetDepartStep(CurrentStep);
-                        newTuple.ID = CurrentStep;
 
                         PerformAStep(newTuple);
                     }
@@ -162,7 +232,7 @@ namespace COD_Base.Core
         /// <returns></returns>
         public int GetDepartStep(int arrivalStep)
         {
-            throw new NotImplementedException();
+            return 100;
         }
 
         public bool IsProcessOver
@@ -185,11 +255,11 @@ namespace COD_Base.Core
         {
             get
             {
-                return _streamRate;
+                return (1000.0 / (double)_periodTimeBetweenTuple);
             }
             set
             {
-                _streamRate = value;
+                _periodTimeBetweenTuple = (int)(1000.0 / value);
             }
         }
 
@@ -207,7 +277,10 @@ namespace COD_Base.Core
         /// <param name="newTuple"></param>
         public void PerformAStep(ITuple newTuple)
         {
-            throw new NotImplementedException();
+            _curStreamStep += 1;
+            //for test start
+            Console.WriteLine( "In Step : " + _curStreamStep + " " + newTuple.Data[0].ToString());
+            //for test end
         }
         /// <summary>
         /// 负责对Tuple的一些有关流的属性（如到达step，过期step）的初始化，以及事件的发送
@@ -227,17 +300,8 @@ namespace COD_Base.Core
             throw new NotImplementedException();
         }
 
-        public void SendEvent()
-        {
-            throw new NotImplementedException();
-        }
 
         public void SendEvent(IEvent anEvent)
-        {
-            throw new NotImplementedException();
-        }
-
-        public void StartStreamSimulate()
         {
             throw new NotImplementedException();
         }

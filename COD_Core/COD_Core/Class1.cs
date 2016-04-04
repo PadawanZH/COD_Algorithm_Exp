@@ -14,12 +14,16 @@ namespace COD_Base
         public static readonly object mutex = new object();
         public static void Main(string[] Args)
         {
-            Class1 c1 = new Class1();
-            Thread t1 = new Thread(c1.thread1func);
-            Thread t2 = new Thread(c1.thread2Func);
-            t1.Start();
-            t2.Start();
-            t1.Join();
+            StreamSimulator.GetInstance();
+            StreamSimulator.GetInstance().Initialize();
+            StreamSimulator.GetInstance().StartSimulationInTimerMode();
+
+            Thread.Sleep(3000);
+            StreamSimulator.GetInstance().StopTimerModeSimulation();
+            StreamSimulator.GetInstance().StartSimulationInTimerMode();
+            Thread.Sleep(3000);
+            StreamSimulator.GetInstance().StopTimerModeSimulation();
+            Console.ReadKey();
         }
 
         public void thread1func()

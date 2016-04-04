@@ -37,6 +37,10 @@ namespace COD_Base.Dynamic.DataAccess
                 }
                 else
                 {
+                    if(fileReader != null)
+                    {
+                        fileReader.Close();
+                    }
                     fileReader = new StreamReader(_dataFilePath);
                 }
             }
@@ -77,6 +81,13 @@ namespace COD_Base.Dynamic.DataAccess
             //_typeForEachDimension = (List<Type>)Configuration.GetInstance().GetProperty(PropertiesType.TypeListOfDimension);
         }
 
+        public void TestInit()
+        {
+            DataFilePath = System.Environment.CurrentDirectory + "\\InputData\\covtype.data";
+            Dimension = 55;
+            _delimiter = new char[] { ',' };
+        }
+
         public ITuple GetNextTuple()
         {
             if (fileReader != null)
@@ -84,7 +95,7 @@ namespace COD_Base.Dynamic.DataAccess
                 try
                 {
                     string line = fileReader.ReadLine();
-                    if(line == null)
+                    if (line == null)
                     {
                         //End of file, send the eof event
                         Event EofEvent = new Event(GetType().ToString(), EventType.NoMoreTuple);
@@ -96,9 +107,9 @@ namespace COD_Base.Dynamic.DataAccess
                         return CovertTuple(line);
                     }
                 }
-                catch (Exception)
+                catch (Exception e)
                 {
-                    ExceptionUtil.SendErrorEventAndLog(GetType().ToString(), "Cannot read the data file with path = " + _dataFilePath);
+                    ExceptionUtil.SendErrorEventAndLog(GetType().ToString(), e.Message);
                     return null;
                 }
             }
@@ -128,7 +139,6 @@ namespace COD_Base.Dynamic.DataAccess
             if(fileReader != null)
             {
                 fileReader.Close();
-                fileReader.Dispose();
                 fileReader = null;
             }
         }
