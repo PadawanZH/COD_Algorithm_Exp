@@ -20,6 +20,9 @@ namespace COD_Base.Interface
         int DepartStep { get; set; }
         bool IsOutlier { get; set; }
         bool CanBeRangeQueried { get; set; }
+        int Dimension { get; set; }
+
+        int ID { get; set; }
 
         /// <summary>
         /// 各维度的数据，以下标作为一个维度

@@ -4,11 +4,11 @@
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{6707CD2B-3402-4A00-A3C8-30E96B88D2DE}</ProjectGuid>
+    <ProjectGuid>{36B543EC-97FF-4EA4-9142-74BCEB859BB2}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>COD_Base</RootNamespace>
-    <AssemblyName>COD_Core</AssemblyName>
+    <RootNamespace>COD_UnitTest</RootNamespace>
+    <AssemblyName>COD_UnitTest</AssemblyName>
     <TargetFrameworkVersion>v4.5.2</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
   </PropertyGroup>
@@ -30,10 +30,13 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <PropertyGroup>
-    <StartupObject>
-    </StartupObject>
+    <StartupObject />
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="COD_Core">
+      <HintPath>..\COD_Core\bin\Debug\COD_Core.dll</HintPath>
+    </Reference>
+    <Reference Include="nunit.framework, Version=2.6.4.14350, Culture=neutral, PublicKeyToken=96d09a1eb7f44a77, processorArchitecture=MSIL" />
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="System.Xml.Linq" />
@@ -44,42 +47,8 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Algorithms\ContinuousOutlierDetection.cs" />
-    <Compile Include="Class1.cs" />
-    <Compile Include="Class2.cs" />
-    <Compile Include="Class3.cs" />
-    <Compile Include="Core\AlgorithmMgr.cs" />
-    <Compile Include="Core\Event.cs" />
-    <Compile Include="Core\EventDistributor.cs" />
-    <Compile Include="Dynamic\DataAccess\ForestConvertAdapter.cs" />
-    <Compile Include="Dynamic\Entity\Tuple.cs" />
-    <Compile Include="Experiment\PerformanceTest.cs" />
-    <Compile Include="Interface\IWindow.cs" />
-    <Compile Include="Util\TupleComputation.cs" />
-    <Compile Include="Util\ComputeMetrics.cs" />
-    <Compile Include="Util\Configuration.cs" />
-    <Compile Include="Util\ExceptionUtil.cs" />
-    <Compile Include="Util\Logger.cs" />
-    <Compile Include="Core\StreamSimulator.cs" />
-    <Compile Include="Interface\IAlgorithmManager.cs" />
-    <Compile Include="Interface\IConfiguration.cs" />
-    <Compile Include="Interface\IDataAdapter.cs" />
-    <Compile Include="Interface\IEventDIstributor.cs" />
-    <Compile Include="Interface\IExpMetrics.cs" />
-    <Compile Include="Interface\ITuple.cs" />
-    <Compile Include="Interface\IAlgorithm.cs" />
-    <Compile Include="Interface\IStreamSimulator.cs" />
-    <Compile Include="Interface\ITupleSet.cs" />
-    <Compile Include="Interface\IEvent.cs" />
-    <Compile Include="Interface\IListener.cs" />
-    <Compile Include="Interface\ILog.cs" />
+    <Compile Include="CODAlgorithmUnitTest.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="ClassDiagram1.cd" />
-  </ItemGroup>
-  <ItemGroup>
-    <Content Include="Dynamic\DataAccess\ForestConvertType\Forest CoverType 数据说明.txt" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

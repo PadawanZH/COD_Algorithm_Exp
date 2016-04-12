@@ -12,6 +12,7 @@ namespace COD_Base.Core
 {
     /// <summary>
     /// 需要解决的问题：Metric的计算维护，Error事件还没有处理者(这是前台的问题了)
+    /// WindowSlide和Departure应当在Algorithm内部完成
     /// </summary>
     class AlgorithmMgr : IAlgorithmManager
     {
@@ -46,8 +47,8 @@ namespace COD_Base.Core
         public void Initialize()
         {
             MaxAlgorithmID = -1;
-            EventType[] etList = { EventType.NewTupleArrive, EventType.OldTupleDepart, EventType.WindowSlide, EventType.NoMoreTuple };
-            RegistToDistributor(EventDistributor.GetInstance(), etList);
+            EventType[] acceptedEventTypeList = { EventType.NewTupleArrive, EventType.NoMoreTuple };
+            EventDistributor.GetInstance().SubcribeListenerWithFullAcceptedTypeList(this, acceptedEventTypeList);
         }
 
         public ArrayList Algorithms
@@ -78,14 +79,6 @@ namespace COD_Base.Core
                     OnNewTupleArriveEvent( (ITuple)anEvent.GetAttribute(EventAttributeType.Tuple) );
                     break;
 
-                case EventType.OldTupleDepart:
-                    OnOldTupleDepartEvent((ITuple)anEvent.GetAttribute(EventAttributeType.Tuple));
-                    break;
-
-                case EventType.WindowSlide:
-                    OnWindowSlide((IWindow)anEvent.GetAttribute(EventAttributeType.Window));
-                    break;
-
                 case EventType.NoMoreTuple:
                     OnDisposal();
                     break;
@@ -105,29 +98,7 @@ namespace COD_Base.Core
         {
             foreach(IAlgorithm algorithm in _algorithmList)
             {
-                Thread thread = new Thread(() => algorithm.Arrive(p, StreamSimulator.GetInstance().CurrentStep));
-                thread.IsBackground = true;
-                thread.Start();
-                thread.Join();
-            }
-        }
-
-        public void OnOldTupleDepartEvent(ITuple p)
-        {
-            foreach (IAlgorithm algorithm in _algorithmList)
-            {
-                Thread thread = new Thread(() => algorithm.Departure(p, StreamSimulator.GetInstance().CurrentStep));
-                thread.IsBackground = true;
-                thread.Start();
-                thread.Join();
-            }
-        }
-
-        public void OnWindowSlide(IWindow newWindow)
-        {
-            foreach (IAlgorithm algorithm in _algorithmList)
-            {
-                Thread thread = new Thread(() => algorithm.WindowSlide(newWindow));
+                Thread thread = new Thread(() => algorithm.ReceiveNewTupe(p));
                 thread.IsBackground = true;
                 thread.Start();
                 thread.Join();
@@ -155,16 +126,7 @@ namespace COD_Base.Core
         
         protected void HandleUnknownEventType(string eventType)
         {
-            Event error = new Event(this.ToString(), EventType.Error);
-            string errorMsg = "A Unknown type of event was send to algorithmMgr,EventType : " + eventType;
-            error.AddAttribute(EventAttributeType.Message, errorMsg);
-            EventDistributor.GetInstance().SendEvent(error);
-            Logger.GetInstance().Warn(GetType().ToString(), errorMsg);
-        }
-
-        public void RegistToDistributor(IEventDIstributor eventDistributor, EventType[] acceptedEventType)
-        {
-            eventDistributor.SubcribeListenerWithFullAcceptedTypeList(this, acceptedEventType);
+            ExceptionUtil.SendErrorEventAndLog(GetType().ToString(), "A Unknown type of event was send to algorithmMgr,EventType : " + eventType);
         }
     }
 }

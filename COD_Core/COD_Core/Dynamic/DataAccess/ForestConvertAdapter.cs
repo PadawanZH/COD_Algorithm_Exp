@@ -110,7 +110,7 @@ namespace COD_Base.Dynamic.DataAccess
                 catch (Exception e)
                 {
                     ExceptionUtil.SendErrorEventAndLog(GetType().ToString(), e.Message);
-                    return null;
+                    throw e;
                 }
             }
             else
@@ -169,6 +169,7 @@ namespace COD_Base.Dynamic.DataAccess
                 NumData.Add(Convert.ToDouble(data[i]));
             }
             tuple.Data = NumData;
+            tuple.Dimension = data.Length;
             return tuple;
         }
     }

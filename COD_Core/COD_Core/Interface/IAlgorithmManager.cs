@@ -32,18 +32,5 @@ namespace COD_Base.Interface
         /// <param name="p">当事tuple</param>
         /// <param name="curStep">当前步数</param>
         void OnNewTupleArriveEvent(ITuple p);
-
-        /// <summary>
-        /// 处理<see cref="EventType.OldTupleDepart"/>类型事件的函数
-        /// </summary>
-        /// <param name="p"></param>
-        /// <param name="curStep"></param>
-        void OnOldTupleDepartEvent(ITuple p);
-
-        /// <summary>
-        /// 窗口滑动时调用的函数
-        /// </summary>
-        /// <param name="newWindow"></param>
-        void OnWindowSlide(IWindow newWindow);
     }
 }

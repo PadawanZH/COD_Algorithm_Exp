@@ -14,6 +14,7 @@ namespace COD_Base.Dynamic.Entity
         protected List<double> _data;
         protected int _departStep;
         protected bool _isOutlier;
+        protected int _dimension;
 
         public int ArrivalStep
         {
@@ -66,6 +67,19 @@ namespace COD_Base.Dynamic.Entity
             }
         }
 
+        public int Dimension
+        {
+            get
+            {
+                return _dimension;
+            }
+
+            set
+            {
+                _dimension = value;
+            }
+        }
+
         public bool IsOutlier
         {
             get
@@ -76,6 +90,19 @@ namespace COD_Base.Dynamic.Entity
             set
             {
                 _isOutlier = value;
+            }
+        }
+
+        public int ID
+        {
+            get
+            {
+                throw new NotImplementedException();
+            }
+
+            set
+            {
+                throw new NotImplementedException();
             }
         }
     }

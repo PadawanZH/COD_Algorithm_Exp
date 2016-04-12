@@ -14,15 +14,11 @@ namespace COD_Base
         public static readonly object mutex = new object();
         public static void Main(string[] Args)
         {
-            StreamSimulator.GetInstance();
-            StreamSimulator.GetInstance().Initialize();
-            StreamSimulator.GetInstance().StartSimulationInTimerMode();
-
-            Thread.Sleep(3000);
-            StreamSimulator.GetInstance().StopTimerModeSimulation();
-            StreamSimulator.GetInstance().StartSimulationInTimerMode();
-            Thread.Sleep(3000);
-            StreamSimulator.GetInstance().StopTimerModeSimulation();
+            Hashtable ht = new Hashtable();
+            if(ht["fun"] == null)
+            {
+                Console.WriteLine("11");
+            }
             Console.ReadKey();
         }
 

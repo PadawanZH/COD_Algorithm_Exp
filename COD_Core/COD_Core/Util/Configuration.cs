@@ -56,7 +56,8 @@ namespace COD_Base.Util
             catch(Exception e)
             {
                 ExceptionUtil.SendErrorEventAndLog(GetType().ToString(), e.Message);
-                return null;
+                throw e;
+                //return null;
             }
         }
     }

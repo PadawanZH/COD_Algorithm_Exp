@@ -26,33 +26,11 @@ namespace COD_Base.Interface
         /// </summary>
         double StreamRate { get; set; }
 
-        /// <summary>
-        /// 实验控制变量
-        /// </summary>
-        #region ControlAttribute
-
-        int SliedSpan { get; }
-        int WindowSize { get; }
-        #endregion
-
         void PauseSimulate();
 
         /// <summary>
         /// 作为流数据模拟的步骤函数,调用<see cref="IDataAdapter.GetNextTuple"/>取得下一个tuple，负责维护Window
         /// </summary>
         void PerformAStep(ITuple newTuple);
-
-        /// <summary>
-        /// 维护窗口，当其认为窗口滑动，则调用<see cref="IStreamSimulator.OnWindowSlide"/>。
-        /// </summary>
-        void CheckWindow();
-
-        /// <summary>
-        /// 窗口滑动
-        /// </summary>
-        void OnWindowSlide();
-        void OnNewTupleArrive();
-        void OnOldTupleDepart();
-
     }
 }

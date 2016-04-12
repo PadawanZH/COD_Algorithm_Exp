@@ -5,6 +5,11 @@ VisualStudioVersion = 14.0.24720.0
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "COD_Base", "COD_Core\COD_Base.csproj", "{6707CD2B-3402-4A00-A3C8-30E96B88D2DE}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "COD_UnitTest", "COD_UnitTest\COD_UnitTest.csproj", "{36B543EC-97FF-4EA4-9142-74BCEB859BB2}"
+	ProjectSection(ProjectDependencies) = postProject
+		{6707CD2B-3402-4A00-A3C8-30E96B88D2DE} = {6707CD2B-3402-4A00-A3C8-30E96B88D2DE}
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -15,6 +20,10 @@ Global
 		{6707CD2B-3402-4A00-A3C8-30E96B88D2DE}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{6707CD2B-3402-4A00-A3C8-30E96B88D2DE}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{6707CD2B-3402-4A00-A3C8-30E96B88D2DE}.Release|Any CPU.Build.0 = Release|Any CPU
+		{36B543EC-97FF-4EA4-9142-74BCEB859BB2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{36B543EC-97FF-4EA4-9142-74BCEB859BB2}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{36B543EC-97FF-4EA4-9142-74BCEB859BB2}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{36B543EC-97FF-4EA4-9142-74BCEB859BB2}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

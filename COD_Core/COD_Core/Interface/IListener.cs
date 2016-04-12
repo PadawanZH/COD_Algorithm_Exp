@@ -13,10 +13,5 @@ namespace COD_Base.Interface
     public interface IListener
     {
         void OnEvent(IEvent anEvent);
-
-        /// <summary>
-        /// 具体参数待定
-        /// </summary>
-        void RegistToDistributor(IEventDIstributor eventDistributor, EventType[] acceptedEventType);
     }
 }

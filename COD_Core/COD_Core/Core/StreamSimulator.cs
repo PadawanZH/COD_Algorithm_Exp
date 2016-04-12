@@ -18,6 +18,7 @@ namespace COD_Base.Core
         private StreamSimulator()
         {
             isRunningTimerMode = false;
+            ToDoBuffer = new Queue<ITuple>();
         }
 
         public static StreamSimulator GetInstance()
@@ -32,29 +33,33 @@ namespace COD_Base.Core
 
         /// <summary>
         /// 对变量初始化，在EventDistributor注册listener等工作
+        /// 同时也负责reset工作
         /// </summary>
         public void Initialize()
         {
             _curStreamStep = 0;
             _isProcessOver = false;
 
-            ToDoBuffer = new Queue<ITuple>();
-
             _periodTimeBetweenTuple = 1000;
             millisecondsTimeoutOfWaitLock = _periodTimeBetweenTuple;
 
             Dynamic.DataAccess.ForestConvertTypeAdaptor temp = new Dynamic.DataAccess.ForestConvertTypeAdaptor();
+            //测试用的Init
             temp.TestInit();
             _dataAdapter = temp;
 
             simulateTimer = new Timer(new TimerCallback(TimerThreadFunc), this, Timeout.Infinite, _periodTimeBetweenTuple);
             tupleHandleThread = new Thread(TupleProcessorThreadFunc);
-        }
 
-        /// <summary>
-        /// 标记Algorithm是否在Timer的情况下运行（即是否在StreamSimulator的模拟流的情况下运行），当此值为false时，才可在运行<see cref="Experiment.PerformanceTest"/>中的静态数据模式
-        /// </summary>
-        public bool isRunningTimerMode;
+            if(ToDoBuffer != null && ToDoBuffer.Count != 0)
+            {
+                ToDoBuffer.Clear();
+            }
+
+            //StreamSimulator需要NoMoreTuple来停止Timer继续向dataAdapter索要Tuple
+            EventType[] acceptedEventTypeList = { EventType.NoMoreTuple };
+            EventDistributor.GetInstance().SubcribeListenerWithFullAcceptedTypeList(this, acceptedEventTypeList);
+        }
 
         public void StartSimulationInTimerMode()
         {
@@ -103,18 +108,24 @@ namespace COD_Base.Core
 
             Initialize();
         }
-        
+
+        #region properties need to get from CONFIGURATION
         //这些变量应该由Configuration处获得
-        protected int _curStreamStep;
         protected bool _isProcessOver;
-        protected int _slideSpan;
-        
         /// <summary>
         /// time interval of get 
         /// </summary>
         protected int _periodTimeBetweenTuple;
-        protected int _windowSize;
+        
+        #endregion
 
+        #region state properties
+        protected int _curStreamStep;
+        /// <summary>
+        /// 标记Algorithm是否在Timer的情况下运行（即是否在StreamSimulator的模拟流的情况下运行），当此值为false时，才可在运行<see cref="Experiment.PerformanceTest"/>中的静态数据模式
+        /// </summary>
+        public bool isRunningTimerMode;
+        #endregion
         /// <summary>
         /// 当<see cref="UseSteadyStreamingMode"/>为false时需要实现该buffer
         /// </summary>
@@ -160,6 +171,7 @@ namespace COD_Base.Core
                     catch (Exception e)
                     {
                         ExceptionUtil.SendErrorEventAndLog(GetType().ToString(), "Something occured while timer thread in StreamSimulator try to acquire the mutex lock. Exception Message : " + e.Message);
+                        throw e;
                     }
                     finally
                     {
@@ -208,6 +220,7 @@ namespace COD_Base.Core
                 }catch(Exception e)
                 {
                     ExceptionUtil.SendErrorEventAndLog(GetType().ToString(), e.Message);
+                    throw e;
                 }
                 finally
                 {
@@ -232,7 +245,8 @@ namespace COD_Base.Core
         /// <returns></returns>
         public int GetDepartStep(int arrivalStep)
         {
-            return 100;
+            throw new NotImplementedException();
+            //return 100;
         }
 
         public bool IsProcessOver
@@ -240,14 +254,6 @@ namespace COD_Base.Core
             get
             {
                 return _isProcessOver;
-            }
-        }
-
-        public int SliedSpan
-        {
-            get
-            {
-                return _slideSpan;
             }
         }
 
@@ -263,14 +269,6 @@ namespace COD_Base.Core
             }
         }
 
-        public int WindowSize
-        {
-            get
-            {
-                return _windowSize;
-            }
-        }
-
         /// <summary>
         /// 新tuple的到来才导致了streamSimulator的一切状态变化，故以newTuple为参数
         /// </summary>
@@ -281,25 +279,8 @@ namespace COD_Base.Core
             //for test start
             Console.WriteLine( "In Step : " + _curStreamStep + " " + newTuple.Data[0].ToString());
             //for test end
-        }
-        /// <summary>
-        /// 负责对Tuple的一些有关流的属性（如到达step，过期step）的初始化，以及事件的发送
-        /// </summary>
-        public void OnNewTupleArrive()
-        {
-            throw new NotImplementedException();
-        }
 
-        public void OnOldTupleDepart()
-        {
-            throw new NotImplementedException();
         }
-
-        public void OnWindowSlide()
-        {
-            throw new NotImplementedException();
-        }
-
 
         public void SendEvent(IEvent anEvent)
         {
@@ -311,19 +292,19 @@ namespace COD_Base.Core
 
         }
 
-        public void CheckWindow()
-        {
-            throw new NotImplementedException();
-        }
-
         public void OnEvent(IEvent anEvent)
         {
-            throw new NotImplementedException();
-        }
+            switch (anEvent.Type)
+            {
+                case EventType.NoMoreTuple:
+                    throw new NotImplementedException();
+                    break;
 
-        public void RegistToDistributor(IEventDIstributor eventDistributor, EventType[] acceptedEventType)
-        {
-            throw new NotImplementedException();
+                default:
+                    //无法处理的Event种类
+                    //HandleUnknownEventType(anEvent.Type.ToString());
+                    break;
+            }
         }
 
         /// <summary>
