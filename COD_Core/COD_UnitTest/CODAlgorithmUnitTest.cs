@@ -18,10 +18,10 @@ namespace COD_UnitTest
             algorithm = new ContinuousOutlierDetection();
             algorithm.Initialize();
 
-            algorithm.CODEventQueue.Add(new CODEvent(new CODTuple(), 30));
-            algorithm.CODEventQueue.Add(new CODEvent(new CODTuple(), 20));
-            algorithm.CODEventQueue.Add(new CODEvent(new CODTuple(), 100));
-            algorithm.CODEventQueue.Add(new CODEvent(new CODTuple(), 10));
+            algorithm.CODEventQueue.Add(new CODEvent(new CODTuple(null), 30));
+            algorithm.CODEventQueue.Add(new CODEvent(new CODTuple(null), 20));
+            algorithm.CODEventQueue.Add(new CODEvent(new CODTuple(null), 100));
+            algorithm.CODEventQueue.Add(new CODEvent(new CODTuple(null), 10));
 
             Assert.AreEqual(algorithm.CODEventQueue.ElementAt(0).eventTime, 10);
             Assert.AreEqual(algorithm.CODEventQueue.ElementAt(1).eventTime, 20);

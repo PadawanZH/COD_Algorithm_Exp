@@ -14,12 +14,11 @@ namespace COD_Base.Interface
     /// <summary>
     /// 作为通用的数据实体
     /// </summary>
-    public interface ITuple
+    public interface ITuple : IDisposable
     {
         int ArrivalStep { get; set; }
         int DepartStep { get; set; }
         bool IsOutlier { get; set; }
-        bool CanBeRangeQueried { get; set; }
         int Dimension { get; set; }
 
         int ID { get; set; }

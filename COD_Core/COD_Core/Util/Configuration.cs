@@ -15,7 +15,9 @@ public enum PropertiesType
     DataFilePath,
     DataDimension,
     TypeListOfDimension,
-    Delimiter
+    Delimiter,
+    QueryRange,
+    KNeighbourThreshold
 }
 
 namespace COD_Base.Util

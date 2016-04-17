@@ -11,12 +11,11 @@ using System.Threading;
 namespace COD_Base.Core
 {
     /// <summary>
-    /// 需要解决的问题：Metric的计算维护，Error事件还没有处理者(这是前台的问题了)
-    /// WindowSlide和Departure应当在Algorithm内部完成
+    /// 需要解决的问题：Error事件还没有处理者(这是前台的问题了)
     /// </summary>
-    class AlgorithmMgr : IAlgorithmManager
+    class AlgorithmMgr : IListener
     {
-        private static AlgorithmMgr instance;
+        /*private static AlgorithmMgr instance;
         private AlgorithmMgr()
         {
             _algorithmList = new ArrayList();
@@ -31,102 +30,83 @@ namespace COD_Base.Core
                 instance.Initialize();
             }
             return instance;
-        }
+        }*/
 
-        protected ArrayList _algorithmList;
-        /// <summary>
-        /// 算法线程引用列表，方便对线程进行操作，目前暂时没有实现的需求
-        /// </summary>
-        protected ArrayList _algorithmThreadList;
-        protected Hashtable _metricsForAlgorithm;
-        protected int MaxAlgorithmID;
+        public int processedTupleCount;
+        public int outlierHistoryCount;
+        public double avgOutlierRateAgainstWindowSize;
+        public int windowSlideCount;
+        public int outliersCountInCurrentWindow;
 
-        /// <summary>
-        /// 在<see cref="GetInstance"/>的lazy实例化后调用，用以初始化一些变量
-        /// </summary>
-        public void Initialize()
+        protected bool isConfigurationSet;
+
+        public long startTime;
+        public long endTime;
+
+        public AlgorithmMgr()
         {
-            MaxAlgorithmID = -1;
-            EventType[] acceptedEventTypeList = { EventType.NewTupleArrive, EventType.NoMoreTuple };
+            EventType[] acceptedEventTypeList = { EventType.NewTupleArrive, EventType.NoMoreTuple, EventType.InlierBecomeOutlier, EventType.OutlierBecomeInlier, EventType.WindowSlide };
             EventDistributor.GetInstance().SubcribeListenerWithFullAcceptedTypeList(this, acceptedEventTypeList);
+
+            processedTupleCount = 0;
+            outlierHistoryCount = 0;
+            avgOutlierRateAgainstWindowSize = 0;
+            windowSlideCount = 0;
+            outliersCountInCurrentWindow = 0;
+
+            isConfigurationSet = false;
         }
 
-        public ArrayList Algorithms
+        public double TotalTimeInSec
         {
             get
             {
-                return _algorithmList;
+                return (endTime - startTime) / 10000000.0;
             }
         }
 
-        public Hashtable MetricsForAlgorithms
+        public void SetupConfiguration(int WindowSize, int SildeSpan, string DataFilePath, int DataDimension, List<Type> typeListOfDimension, char[] Delimiter, double queryRange, int kNighbourThreshold)
         {
-            get
-            {
-                return _metricsForAlgorithm;
-            }
+
+            isConfigurationSet = true;
         }
 
-        /// <summary>
-        /// 响应并处理事件
-        /// </summary>
-        /// <param name="anEvent"></param>
         public void OnEvent(IEvent anEvent)
         {
             switch (anEvent.Type)
             {
                 case EventType.NewTupleArrive:
-                    OnNewTupleArriveEvent( (ITuple)anEvent.GetAttribute(EventAttributeType.Tuple) );
+                    if (processedTupleCount == 0)
+                    {
+                        startTime = System.DateTime.Now.Ticks;
+                    }
+                    processedTupleCount++;
                     break;
-
+                case EventType.OutlierBecomeInlier:
+                    outliersCountInCurrentWindow--;
+                    break;
+                case EventType.InlierBecomeOutlier:
+                    outlierHistoryCount++;
+                    outliersCountInCurrentWindow++;
+                    break;
+                case EventType.WindowSlide:
+                    windowSlideCount++;
+                    double outlierRateAgainstWindowSize = outliersCountInCurrentWindow / (double)Configuration.GetInstance().GetProperty(PropertiesType.WindowSize);
+                    avgOutlierRateAgainstWindowSize += outlierRateAgainstWindowSize;
+                    outliersCountInCurrentWindow = 0;
+                    break;
                 case EventType.NoMoreTuple:
-                    OnDisposal();
+                    endTime = DateTime.Now.Ticks;
+                    if (windowSlideCount > 0)
+                    {
+                        avgOutlierRateAgainstWindowSize /= (double)windowSlideCount;
+                    }
+                    else
+                    {
+                        avgOutlierRateAgainstWindowSize = (double)outliersCountInCurrentWindow / (double)processedTupleCount;
+                    }
                     break;
-
-                default:
-                    //无法处理的Event种类
-                    HandleUnknownEventType(anEvent.Type.ToString());
-                    break;
             }
-        }
-
-        /// <summary>
-        /// 对于Metric的问题，我想在Algorithm里面实现
-        /// </summary>
-        /// <param name="p"></param>
-        public void OnNewTupleArriveEvent(ITuple p)
-        {
-            foreach(IAlgorithm algorithm in _algorithmList)
-            {
-                Thread thread = new Thread(() => algorithm.ReceiveNewTupe(p));
-                thread.IsBackground = true;
-                thread.Start();
-                thread.Join();
-            }
-        }
-
-        /// <summary>
-        /// 释放引用算法分配的内存及自己的内存，在<see cref="EventType.NoMoreTuple"/>事件发出后调用
-        /// </summary>
-        protected void OnDisposal()
-        {
-            foreach (IAlgorithm algorithm in _algorithmList)
-            {
-                algorithm.Dispose();
-            }
-        }
-
-        public void RegistAlgorithm(IAlgorithm newAlgorithm)
-        {
-            _algorithmList.Add(newAlgorithm);
-            int algorithmKey = _algorithmList.LastIndexOf(newAlgorithm);
-            _metricsForAlgorithm.Add(algorithmKey, new ComputeMetrics());
-        }
-
-        
-        protected void HandleUnknownEventType(string eventType)
-        {
-            ExceptionUtil.SendErrorEventAndLog(GetType().ToString(), "A Unknown type of event was send to algorithmMgr,EventType : " + eventType);
         }
     }
 }

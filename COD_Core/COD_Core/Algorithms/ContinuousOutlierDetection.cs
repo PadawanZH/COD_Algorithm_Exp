@@ -9,27 +9,24 @@ using COD_Base.Core;
 
 namespace COD_Base.Algorithms
 {
-    /// <summary>
-    /// struct 的复制是浅拷贝还是深拷贝还有待研究，要是深拷贝的话就直接改成class
-    /// </summary>
-    public struct CODTuple
+    public class CODTuple
     {
         public ITuple tuple;
-        public int NumberOfSucceedingNeighbour;
+        public int numberOfSucceedingNeighbour;
         //key: ID, value: expTime
-        public Dictionary<int, int> PreceedingNeighboursExpTime;
+        public Dictionary<int, int> preceedingNeighboursExpTime;
 
         public CODTuple(ITuple t)
         {
             tuple = t;
-            NumberOfSucceedingNeighbour = 0;
-            PreceedingNeighboursExpTime = new Dictionary<int, int>();
+            numberOfSucceedingNeighbour = 0;
+            preceedingNeighboursExpTime = new Dictionary<int, int>();
         }
 
         public int FindMinExpTime()
         {
             int minTime = int.MaxValue;
-            foreach(int expTime in PreceedingNeighboursExpTime.Values)
+            foreach(int expTime in preceedingNeighboursExpTime.Values)
             {
                 if(minTime > expTime)
                 {
@@ -41,11 +38,22 @@ namespace COD_Base.Algorithms
 
         public void DeleteFromPreceedingExpTime(int tupleID)
         {
-            PreceedingNeighboursExpTime.Remove(tupleID);
+          if(preceedingNeighboursExpTime.Remove(tupleID) == false)
+            {
+                throw new Exception("Algorithm " + GetType().ToString() + " is tring to DeleteFromPreceedingExpTime with the tupleID is" + tupleID + ". And the owner of this dictoinary is " + tuple.ID);
+            }
+        }
+
+        public void Dispose()
+        {
+            tuple.Dispose();
+            tuple = null;
+            preceedingNeighboursExpTime.Clear();
+            preceedingNeighboursExpTime = null;
         }
     }
 
-    public struct CODEvent
+    public class CODEvent
     {
         public CODTuple codTuple;
         public int eventTime;
@@ -54,6 +62,11 @@ namespace COD_Base.Algorithms
         {
             codTuple = t;
             eventTime = e;
+        }
+
+        public void Dispose()
+        {
+            codTuple.Dispose();
         }
     }
 
@@ -77,6 +90,7 @@ namespace COD_Base.Algorithms
                 return -1;
             }
         }
+
     }
     /// <summary>
     /// WindowSlide和Departure应当在Algorithm内部完成
@@ -106,6 +120,12 @@ namespace COD_Base.Algorithms
         public void Initialize()
         {
             currentStep = 0;
+            _slideSpan = (int) Configuration.GetInstance().GetProperty(PropertiesType.SlideSpan);
+            _windowSize = (int) Configuration.GetInstance().GetProperty(PropertiesType.WindowSize);
+
+            range = (double)Configuration.GetInstance().GetProperty(PropertiesType.QueryRange);
+            neighbourThreshold = (int)Configuration.GetInstance().GetProperty(PropertiesType.KNeighbourThreshold);
+
             CODEventQueue = new SortedSet<CODEvent>(new CODEventComparor());
         }
 
@@ -123,22 +143,29 @@ namespace COD_Base.Algorithms
         /// <param name="newTuple"></param>
         public void ReceiveNewTupe(ITuple newTuple)
         {
+            newTuple.ArrivalStep = currentStep;
+            newTuple.DepartStep = ComputeDepartStep();
+            newTuple.IsOutlier = false;
+            //目前一步一个tuple，故可以如此赋值
+            newTuple.ID = currentStep;
             CODTuple newCODTuple = new CODTuple(newTuple);
-
-            if (ShouldWindowSlide())
+            if (currentStep >= _windowSize)
             {
-                for(int i = 0; i < _slideSpan; i++)
+                if (ShouldWindowSlide())
                 {
-                    CODTuple oldTuple = window.Dequeue();
-                    Departure(oldTuple, currentStep);
+                    for (int i = 0; i < _slideSpan; i++)
+                    {
+                        CODTuple oldTuple = window.Dequeue();
+                        Departure(oldTuple, currentStep);
+                    }
                 }
+
+                //Arrive函数是否要在窗口弹出之前执行呢？我觉得是在之后，因为窗口的定义为”总是维护最近的n个object“
+                //而arrive应当是以window之内作为执行范围的，若在窗口弹出前执行，岂不是Arrive的执行范围变成了n+1? 所以我将Arrive放在这里
+                Arrive(newCODTuple, currentStep);
             }
-
-            //Arrive函数是否要在窗口弹出之前执行呢？我觉得是在之后，因为窗口的定义为”总是维护最近的n个object“
-            //而arrive应当是以window之内作为执行范围的，若在窗口弹出前执行，岂不是Arrive的执行范围变成了n+1? 所以我将Arrive放在这里
-            Arrive(newCODTuple, currentStep);
-
             AddTupleIntoWindow(newCODTuple);
+            currentStep++;
         }
 
         /// <summary>
@@ -152,14 +179,14 @@ namespace COD_Base.Algorithms
             for(int i=0; i < neighbours.Keys.Count; i++)
             {
                 CODTuple q = neighbours.Keys.ElementAt(i);
-                q.NumberOfSucceedingNeighbour++;
+                q.numberOfSucceedingNeighbour++;
                 
-                if(q.tuple.IsOutlier && (q.NumberOfSucceedingNeighbour + q.PreceedingNeighboursExpTime.Count == neighbourThreshold) )
+                if(q.tuple.IsOutlier && (q.numberOfSucceedingNeighbour + q.preceedingNeighboursExpTime.Count == neighbourThreshold) )
                 {
                     RemoveFromOutlier(q.tuple);
 
                     //该if语句是否应当在这里还有待考证（【28】中是在这里的，【原文】不在，但是感觉在这里是正确的）
-                    if (q.PreceedingNeighboursExpTime.Count > 0)
+                    if (q.preceedingNeighboursExpTime.Count > 0)
                     {
                         Insert(q);
                     }
@@ -168,7 +195,7 @@ namespace COD_Base.Algorithms
             AssignKNearestPreceedingNeighboursToTuple(newCODTuple, neighbours);
             
             ///
-            if(newCODTuple.PreceedingNeighboursExpTime.Count < neighbourThreshold)
+            if(newCODTuple.preceedingNeighboursExpTime.Count < neighbourThreshold)
             {
                 AddToOutlier(newCODTuple.tuple);
             }
@@ -182,13 +209,35 @@ namespace COD_Base.Algorithms
 
         public void Departure(CODTuple oldTuple, int currentStep)
         {
-            throw new NotImplementedException();
+            CODEvent x = FindMin();
+            while(x.eventTime == currentStep)
+            {
+                x = ExtractMin();
+                x.codTuple.DeleteFromPreceedingExpTime(oldTuple.tuple.ID);
+                
+                if(x.codTuple.numberOfSucceedingNeighbour + x.codTuple.preceedingNeighboursExpTime.Count < neighbourThreshold)
+                {
+                    AddToOutlier(x.codTuple.tuple);
+                }
+                else
+                {
+                    //update the event time for next check
+                    Insert(x.codTuple);
+                }
+            }
+
+            //free the memory
+            oldTuple.Dispose();
         }
 
         public void Dispose()
         {
             window.Clear();
             window = null;
+            foreach(CODEvent codEvent in CODEventQueue)
+            {
+                codEvent.Dispose();
+            }
             CODEventQueue.Clear();
             CODEventQueue = null;
         }
@@ -211,7 +260,7 @@ namespace COD_Base.Algorithms
         {
             tuple.IsOutlier = false;
 
-            Event e = new Event("an tuple become inlier", EventType.OutlierStateChange);
+            Event e = new Event("an tuple become inlier", EventType.OutlierBecomeInlier);
             e.AddAttribute(EventAttributeType.Tuple, tuple);
             EventDistributor.GetInstance().SendEvent(e);
         }
@@ -220,15 +269,9 @@ namespace COD_Base.Algorithms
         {
             tuple.IsOutlier = true;
 
-            Event e = new Event("an tuple become outlier", EventType.OutlierStateChange);
+            Event e = new Event("an tuple become outlier", EventType.InlierBecomeOutlier);
             e.AddAttribute(EventAttributeType.Tuple, tuple);
             EventDistributor.GetInstance().SendEvent(e);
-        }
-
-        public void Insert(CODTuple q)
-        {
-            CODEvent newCODEvent = new CODEvent(q, q.FindMinExpTime());
-            CODEventQueue.Add(newCODEvent);
         }
 
         public void AssignKNearestPreceedingNeighboursToTuple(CODTuple newTuple, Dictionary<CODTuple, double> neighbours)
@@ -242,7 +285,7 @@ namespace COD_Base.Algorithms
                 neighbourExpTime = sortedNeighbour.ElementAt(i).Key.tuple.DepartStep;
                 k_NearestNeighbour.Add(neighbourID, neighbourExpTime);
             }
-            newTuple.PreceedingNeighboursExpTime = k_NearestNeighbour;
+            newTuple.preceedingNeighboursExpTime = k_NearestNeighbour;
         }
 
         public void AddTupleIntoWindow(CODTuple newTuple)
@@ -264,5 +307,49 @@ namespace COD_Base.Algorithms
                 throw new Exception("Window count is " + window.Count + " exceed the windowSize");
             }
         }
+
+        /// <summary>
+        /// 要求currentStep在将Tuple处理完并添加到window之后才加一，否则会影响正确性
+        /// </summary>
+        /// <returns></returns>
+        protected int ComputeDepartStep()
+        {
+            int departStep = _windowSize + 3 * (int)(currentStep / 3);
+            return departStep;
+        }
+
+        #region Functions For EventQueue
+        protected void Insert(CODTuple q)
+        {
+            CODEvent newCODEvent = new CODEvent(q, q.FindMinExpTime());
+            CODEventQueue.Add(newCODEvent);
+        }
+
+        protected CODEvent FindMin()
+        {
+            if(CODEventQueue.Count != 0)
+            {
+                return CODEventQueue.ElementAt(0);
+            }
+            else
+            {
+                throw new Exception("Algorithm " + GetType().ToString() + " is tring to \"findMin\" in eventQueue but actually noting in Queue.");
+            }
+        }
+
+        protected CODEvent ExtractMin()
+        {
+            if (CODEventQueue.Count != 0)
+            {
+                CODEvent minEvent = CODEventQueue.ElementAt(0);
+                CODEventQueue.Remove(minEvent);
+                return minEvent;
+            }
+            else
+            {
+                throw new Exception("Algorithm " + GetType().ToString() + " is tring \"extractMin\" in eventQueue but actually noting in Queue.");
+            }
+        }
+        #endregion
     }
 }

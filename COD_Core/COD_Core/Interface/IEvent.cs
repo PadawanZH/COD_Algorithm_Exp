@@ -6,15 +6,16 @@ using System.Threading.Tasks;
 
 namespace COD_Base.Interface
 {
-    public enum EventType : int
+    public enum EventType
     {
-        NewTupleArrive = 0,
-        OldTupleDepart = 1,
-        WindowSlide = 2,
-        OutlierStateChange = 3,
-        NoMoreTuple = 4,
-        DataChanged = 5,
-        Error = 6,
+        NewTupleArrive,
+        OldTupleDepart,
+        WindowSlide,
+        InlierBecomeOutlier,
+        OutlierBecomeInlier,
+        NoMoreTuple,
+        DataChanged,
+        Error,
         /// <summary>
         /// 作为界面显示消息的MessageBox使用
         /// </summary>

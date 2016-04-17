@@ -17,7 +17,6 @@ namespace COD_Base.Dynamic.DataAccess
     {
         protected string _dataFilePath;
         protected int _dataDimension;
-        //protected List<Type> _typeForEachDimension;
         protected StreamReader fileReader;
         protected char[] _delimiter;
 
@@ -78,7 +77,6 @@ namespace COD_Base.Dynamic.DataAccess
             DataFilePath = (string) Configuration.GetInstance().GetProperty(PropertiesType.DataFilePath);
             Dimension = (int)Configuration.GetInstance().GetProperty(PropertiesType.DataDimension);
             _delimiter = (char[])Configuration.GetInstance().GetProperty(PropertiesType.Delimiter);
-            //_typeForEachDimension = (List<Type>)Configuration.GetInstance().GetProperty(PropertiesType.TypeListOfDimension);
         }
 
         public void TestInit()

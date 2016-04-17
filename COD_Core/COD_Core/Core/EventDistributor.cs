@@ -2,7 +2,7 @@
 using System.Collections;
 using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
+using System.Threading;
 using COD_Base.Interface;
 using COD_Base.Util;
 
@@ -45,13 +45,13 @@ namespace COD_Base.Core
         }
 
         /// <summary>
-        /// 没有实现
+        /// 没有实现,应该开后台线程去处理事件。
         /// </summary>
         /// <param name="anEvent"></param>
         public void SendEvent(IEvent anEvent)
         {
-            ArrayList listenerListToSend = (ArrayList)_eventTable[anEvent.Type];
-            Logger.GetInstance().Info(ID, " SEND an event with type : " + anEvent.Type.ToString());
+            Thread handleEventThread = new Thread(new ParameterizedThreadStart(HandleEventThreadFunction));
+            handleEventThread.Start(anEvent);
         }
 
         public void Subscribe(IListener listener, EventType eventType)
@@ -84,6 +84,17 @@ namespace COD_Base.Core
             {
                 Subscribe(listener, eventType);
             }
+        }
+
+        public void HandleEventThreadFunction(Object anEvent)
+        {
+            IEvent eventToSend = (IEvent)anEvent;
+            Hashtable listenerListToSend = (Hashtable)_eventTable[eventToSend.Type];
+            foreach(IListener listener in listenerListToSend)
+            {
+                listener.OnEvent(eventToSend);
+            }
+            Logger.GetInstance().Info(ID, " SEND an event with type : " + eventToSend.Type.ToString());
         }
     }
 }
