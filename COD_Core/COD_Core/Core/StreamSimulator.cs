@@ -10,7 +10,7 @@ using COD_Base.Util;
 namespace COD_Base.Core
 {
     /// <summary>
-    /// 生产者消费者的正确性有待检验
+    /// 利用生产者消费者提供tuple
     /// </summary>
     class StreamSimulator : IStreamSimulator
     {
@@ -42,11 +42,6 @@ namespace COD_Base.Core
 
             _periodTimeBetweenTuple = 1000;
             millisecondsTimeoutOfWaitLock = _periodTimeBetweenTuple;
-
-            Dynamic.DataAccess.ForestConvertTypeAdaptor temp = new Dynamic.DataAccess.ForestConvertTypeAdaptor();
-            //测试用的Init
-            temp.TestInit();
-            _dataAdapter = temp;
 
             simulateTimer = new Timer(new TimerCallback(TimerThreadFunc), this, Timeout.Infinite, _periodTimeBetweenTuple);
             tupleHandleThread = new Thread(TupleProcessorThreadFunc);

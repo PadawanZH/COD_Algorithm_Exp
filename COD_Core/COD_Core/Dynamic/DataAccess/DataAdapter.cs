@@ -13,12 +13,14 @@ namespace COD_Base.Dynamic.DataAccess
     /// <summary>
     /// 数据默认按照Double处理
     /// </summary>
-    class ForestConvertTypeAdaptor : IDataAdapter
+    public class DataAdapter : IDataAdapter
     {
         protected string _dataFilePath;
         protected int _dataDimension;
         protected StreamReader fileReader;
         protected char[] _delimiter;
+
+        public Configuration _config;
 
         public string DataFilePath
         {
@@ -72,11 +74,36 @@ namespace COD_Base.Dynamic.DataAccess
             }
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="config">需要<see cref="PropertiesType.DataFilePath"/>,<see cref="PropertiesType.DataDimension"/>,<see cref="PropertiesType.Delimiter"/></param>
+        public DataAdapter(Configuration config)
+        {
+            _config = config;
+            Init();
+        }
+
         public void Init()
         {
-            DataFilePath = (string) Configuration.GetInstance().GetProperty(PropertiesType.DataFilePath);
-            Dimension = (int)Configuration.GetInstance().GetProperty(PropertiesType.DataDimension);
-            _delimiter = (char[])Configuration.GetInstance().GetProperty(PropertiesType.Delimiter);
+            DataFilePath = (string)_config.GetProperty(PropertiesType.DataFilePath);
+            Dimension = (int)_config.GetProperty(PropertiesType.DataDimension);
+            _delimiter = (char[])_config.GetProperty(PropertiesType.Delimiter);
+        }
+
+        public bool IsReadyToRun()
+        {
+            if(     _config != null 
+                &&  _config.GetProperty(PropertiesType.DataFilePath) != null
+                &&  _config.GetProperty(PropertiesType.DataDimension) != null
+                &&  _config.GetProperty(PropertiesType.Delimiter) != null)
+            {
+                return true;
+            }
+            else
+            {
+                return false;
+            }
         }
 
         public void TestInit()
@@ -102,7 +129,7 @@ namespace COD_Base.Dynamic.DataAccess
                     }
                     else
                     {
-                        return CovertTuple(line);
+                        return CovertTuple(line.Trim());
                     }
                 }
                 catch (Exception e)

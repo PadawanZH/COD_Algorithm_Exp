@@ -97,5 +97,30 @@ namespace COD_Base.Dynamic.Entity
             _data.Clear();
             _data = null;
         }
+
+        public override bool Equals(object obj)
+        {
+            if(obj is Tuple)
+            {
+                Tuple that = (Tuple)obj;
+                if(this.Dimension != that.Dimension)
+                {
+                    return false;
+                }
+                for (int i = 0; i < Dimension; i++)
+                {
+                    if(Data[i] != that.Data[i])
+                    {
+                        return false;
+                    }
+                }
+                return true;
+            }
+            else
+            {
+                return false;
+            }
+            
+        }
     }
 }

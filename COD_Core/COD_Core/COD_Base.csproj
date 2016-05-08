@@ -5,7 +5,7 @@
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <ProjectGuid>{6707CD2B-3402-4A00-A3C8-30E96B88D2DE}</ProjectGuid>
-    <OutputType>Library</OutputType>
+    <OutputType>Exe</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>COD_Base</RootNamespace>
     <AssemblyName>COD_Core</AssemblyName>
@@ -44,20 +44,21 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Algorithms\ContinuousOutlierDetection.cs" />
     <Compile Include="Class1.cs" />
     <Compile Include="Class2.cs" />
     <Compile Include="Class3.cs" />
     <Compile Include="Core\AlgorithmMgr.cs" />
     <Compile Include="Core\Event.cs" />
     <Compile Include="Core\EventDistributor.cs" />
-    <Compile Include="Dynamic\DataAccess\ForestConvertAdapter.cs" />
+    <Compile Include="Dynamic\DataAccess\DataAdapter.cs" />
     <Compile Include="Dynamic\Entity\Tuple.cs" />
-    <Compile Include="Experiment\PerformanceTest.cs" />
+    <Compile Include="Run\Metrics.cs" />
+    <Compile Include="Run\PerformanceTest.cs" />
     <Compile Include="Interface\IWindow.cs" />
+    <Compile Include="Util\AssemblySupport.cs" />
     <Compile Include="Util\TupleComputation.cs" />
     <Compile Include="Util\ComputeMetrics.cs" />
-    <Compile Include="Util\Configuration.cs" />
+    <Compile Include="Core\Configuration.cs" />
     <Compile Include="Util\ExceptionUtil.cs" />
     <Compile Include="Util\Logger.cs" />
     <Compile Include="Core\StreamSimulator.cs" />

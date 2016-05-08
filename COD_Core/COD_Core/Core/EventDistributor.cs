@@ -1,5 +1,5 @@
 ﻿using System;
-using System.Collections;
+using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading;
@@ -8,7 +8,7 @@ using COD_Base.Util;
 
 namespace COD_Base.Core
 {
-    sealed class EventDistributor : IEventDIstributor
+    public sealed class EventDistributor : IEventDIstributor
     {
         /// <summary>
         /// 单例模式引用
@@ -17,7 +17,7 @@ namespace COD_Base.Core
         
         private EventDistributor()
         {
-            _eventTable = new Hashtable();
+            _eventTable = new Dictionary<EventType,List<IListener>>();
             ID = GetType().ToString();
 
         }
@@ -33,7 +33,7 @@ namespace COD_Base.Core
         /// <summary>
         /// 其中eventType为key，subscribe这种eventtype的的listener列表为value
         /// </summary>
-        protected Hashtable _eventTable;
+        protected Dictionary<EventType, List<IListener>> _eventTable;
         public string ID;
 
         /// <summary>
@@ -56,24 +56,23 @@ namespace COD_Base.Core
 
         public void Subscribe(IListener listener, EventType eventType)
         {
-            if (!_eventTable.Contains(eventType))
+            if (!_eventTable.ContainsKey(eventType))
             {
-                _eventTable[eventType] = new ArrayList();
+                _eventTable[eventType] = new List<IListener>();
             }
             //若该listener已经订阅该type，则无动作
-            if( !((ArrayList)_eventTable[eventType]).Contains(listener))
+            if( !(_eventTable[eventType]).Contains(listener))
             {
-                ((ArrayList)_eventTable[eventType]).Add(listener);
+                _eventTable[eventType].Add(listener);
                 Logger.GetInstance().Info(ID, " SUBSCRIBE the event with type : " + eventType.ToString());
             }
         }
 
         public void UnSubscribe(IListener listener, EventType eventType)
         {
-            if( _eventTable.Contains(eventType))
+            if( _eventTable.ContainsKey(eventType))
             {
-                ArrayList listenerList = (ArrayList)_eventTable[eventType];
-                listenerList.Remove(listener);
+                _eventTable[eventType].Remove(listener);
                 Logger.GetInstance().Info(ID, " UNSUBSCRIBE the event with type : " + eventType.ToString());
             }
         }
@@ -89,7 +88,7 @@ namespace COD_Base.Core
         public void HandleEventThreadFunction(Object anEvent)
         {
             IEvent eventToSend = (IEvent)anEvent;
-            Hashtable listenerListToSend = (Hashtable)_eventTable[eventToSend.Type];
+            List<IListener> listenerListToSend = _eventTable[eventToSend.Type];
             foreach(IListener listener in listenerListToSend)
             {
                 listener.OnEvent(eventToSend);

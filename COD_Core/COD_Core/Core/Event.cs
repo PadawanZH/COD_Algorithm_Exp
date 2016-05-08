@@ -7,7 +7,7 @@ using COD_Base.Interface;
 
 namespace COD_Base.Core
 {
-    class Event : IEvent
+    public class Event : IEvent
     {
         EventType _type;
         string _senderDescription;

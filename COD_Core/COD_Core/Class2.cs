@@ -12,8 +12,7 @@ namespace COD_Base
 
     public class Example
     {
-        public static void Main()
-        {
-        }
+        public int a;
+        
     }
 }

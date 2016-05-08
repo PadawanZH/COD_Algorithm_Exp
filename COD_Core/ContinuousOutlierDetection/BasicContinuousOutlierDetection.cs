@@ -7,7 +7,7 @@ using COD_Base.Interface;
 using COD_Base.Util;
 using COD_Base.Core;
 
-namespace COD_Base.Algorithms
+namespace ContinuousOutlierDetection
 {
     public class CODTuple
     {
@@ -26,9 +26,9 @@ namespace COD_Base.Algorithms
         public int FindMinExpTime()
         {
             int minTime = int.MaxValue;
-            foreach(int expTime in preceedingNeighboursExpTime.Values)
+            foreach (int expTime in preceedingNeighboursExpTime.Values)
             {
-                if(minTime > expTime)
+                if (minTime > expTime)
                 {
                     minTime = expTime;
                 }
@@ -38,7 +38,7 @@ namespace COD_Base.Algorithms
 
         public void DeleteFromPreceedingExpTime(int tupleID)
         {
-          if(preceedingNeighboursExpTime.Remove(tupleID) == false)
+            if (preceedingNeighboursExpTime.Remove(tupleID) == false)
             {
                 throw new Exception("Algorithm " + GetType().ToString() + " is tring to DeleteFromPreceedingExpTime with the tupleID is" + tupleID + ". And the owner of this dictoinary is " + tuple.ID);
             }
@@ -77,11 +77,11 @@ namespace COD_Base.Algorithms
     {
         public int Compare(CODEvent x, CODEvent y)
         {
-            if(x.eventTime > y.eventTime)
+            if (x.eventTime > y.eventTime)
             {
                 return 1;
             }
-            else if(x.eventTime == y.eventTime)
+            else if (x.eventTime == y.eventTime)
             {
                 return 0;
             }
@@ -96,8 +96,10 @@ namespace COD_Base.Algorithms
     /// WindowSlide和Departure应当在Algorithm内部完成
     /// 这里利用C#赋值时使用的浅拷贝，修改tuple相当于直接修改维护在Window中的tuple
     /// </summary>
-    public class ContinuousOutlierDetection : IAlgorithm
+    public class BasicContinuousOutlierDetection : IAlgorithm
     {
+        public Configuration _config;
+
         public Queue<CODTuple> window;
 
         /// <summary>
@@ -112,21 +114,43 @@ namespace COD_Base.Algorithms
         protected double range;
         protected int neighbourThreshold;
 
-        public ContinuousOutlierDetection()
+        public BasicContinuousOutlierDetection(Configuration config)
         {
+            _config = config;
             Initialize();
+        }
+
+        public BasicContinuousOutlierDetection()
+        {
+            _config = null;
         }
 
         public void Initialize()
         {
             currentStep = 0;
-            _slideSpan = (int) Configuration.GetInstance().GetProperty(PropertiesType.SlideSpan);
-            _windowSize = (int) Configuration.GetInstance().GetProperty(PropertiesType.WindowSize);
+            _slideSpan = (int)_config.GetProperty(PropertiesType.SlideSpan);
+            _windowSize = (int)_config.GetProperty(PropertiesType.WindowSize);
 
-            range = (double)Configuration.GetInstance().GetProperty(PropertiesType.QueryRange);
-            neighbourThreshold = (int)Configuration.GetInstance().GetProperty(PropertiesType.KNeighbourThreshold);
+            range = (double)_config.GetProperty(PropertiesType.QueryRange);
+            neighbourThreshold = (int)_config.GetProperty(PropertiesType.KNeighbourThreshold);
 
             CODEventQueue = new SortedSet<CODEvent>(new CODEventComparor());
+        }
+
+        public bool IsReadyToRun()
+        {
+            if (    _config != null
+                &&  _config.GetProperty(PropertiesType.SlideSpan) != null
+                &&  _config.GetProperty(PropertiesType.WindowSize) != null
+                &&  _config.GetProperty(PropertiesType.QueryRange) != null
+                && _config.GetProperty(PropertiesType.KNeighbourThreshold) != null)
+            {
+                return true;
+            }
+            else
+            {
+                return false;
+            }
         }
 
         public string Description
@@ -134,6 +158,14 @@ namespace COD_Base.Algorithms
             get
             {
                 return GetType().ToString();
+            }
+        }
+
+        public void FillWindow()
+        {
+            for(int i = 0; i < _windowSize; i++)
+            {
+
             }
         }
 
@@ -176,12 +208,12 @@ namespace COD_Base.Algorithms
         public void Arrive(CODTuple newCODTuple, int currentStep)
         {
             Dictionary<CODTuple, double> neighbours = RangeQuery(newCODTuple.tuple, range, neighbourThreshold);
-            for(int i=0; i < neighbours.Keys.Count; i++)
+            for (int i = 0; i < neighbours.Keys.Count; i++)
             {
                 CODTuple q = neighbours.Keys.ElementAt(i);
                 q.numberOfSucceedingNeighbour++;
-                
-                if(q.tuple.IsOutlier && (q.numberOfSucceedingNeighbour + q.preceedingNeighboursExpTime.Count == neighbourThreshold) )
+
+                if (q.tuple.IsOutlier && (q.numberOfSucceedingNeighbour + q.preceedingNeighboursExpTime.Count == neighbourThreshold))
                 {
                     RemoveFromOutlier(q.tuple);
 
@@ -193,9 +225,9 @@ namespace COD_Base.Algorithms
                 }
             }
             AssignKNearestPreceedingNeighboursToTuple(newCODTuple, neighbours);
-            
+
             ///
-            if(newCODTuple.preceedingNeighboursExpTime.Count < neighbourThreshold)
+            if (newCODTuple.preceedingNeighboursExpTime.Count < neighbourThreshold)
             {
                 AddToOutlier(newCODTuple.tuple);
             }
@@ -210,12 +242,12 @@ namespace COD_Base.Algorithms
         public void Departure(CODTuple oldTuple, int currentStep)
         {
             CODEvent x = FindMin();
-            while(x.eventTime == currentStep)
+            while (x.eventTime == currentStep)
             {
                 x = ExtractMin();
                 x.codTuple.DeleteFromPreceedingExpTime(oldTuple.tuple.ID);
-                
-                if(x.codTuple.numberOfSucceedingNeighbour + x.codTuple.preceedingNeighboursExpTime.Count < neighbourThreshold)
+
+                if (x.codTuple.numberOfSucceedingNeighbour + x.codTuple.preceedingNeighboursExpTime.Count < neighbourThreshold)
                 {
                     AddToOutlier(x.codTuple.tuple);
                 }
@@ -234,7 +266,7 @@ namespace COD_Base.Algorithms
         {
             window.Clear();
             window = null;
-            foreach(CODEvent codEvent in CODEventQueue)
+            foreach (CODEvent codEvent in CODEventQueue)
             {
                 codEvent.Dispose();
             }
@@ -244,14 +276,19 @@ namespace COD_Base.Algorithms
 
         protected Dictionary<CODTuple, double> RangeQuery(ITuple newTuple, double range, int neighbourThreshold)
         {
-            double distance;
+            double distance = 0;
             Dictionary<CODTuple, double> neighbours = new Dictionary<CODTuple, double>();
-            foreach(CODTuple codTuple in window)
+            foreach (CODTuple codTuple in window)
             {
-                if(TupleComputation.IsInRange(newTuple, codTuple.tuple, range, out distance))
+                for (int i = 0; i < codTuple.tuple.Dimension; i++)
                 {
-                    neighbours.Add(codTuple, distance);
+                    distance += (codTuple.tuple.Data[i] * codTuple.tuple.Data[i]) + (codTuple.tuple.Data[i] * codTuple.tuple.Data[i]);
+                    if (distance > range)
+                    {
+                        continue;
+                    }
                 }
+                neighbours.Add(codTuple, distance);
             }
             return neighbours;
         }
@@ -277,8 +314,8 @@ namespace COD_Base.Algorithms
         public void AssignKNearestPreceedingNeighboursToTuple(CODTuple newTuple, Dictionary<CODTuple, double> neighbours)
         {
             Dictionary<CODTuple, double> sortedNeighbour = (from entry in neighbours orderby entry.Value ascending select entry).ToDictionary(pair => pair.Key, pair => pair.Value);
-            Dictionary<int,int> k_NearestNeighbour = new Dictionary<int, int>();
-            for(int i = 0; i < neighbourThreshold && i < sortedNeighbour.Count; i++)
+            Dictionary<int, int> k_NearestNeighbour = new Dictionary<int, int>();
+            for (int i = 0; i < neighbourThreshold && i < sortedNeighbour.Count; i++)
             {
                 int neighbourID, neighbourExpTime;
                 neighbourID = sortedNeighbour.ElementAt(i).Key.tuple.ID;
@@ -295,10 +332,11 @@ namespace COD_Base.Algorithms
 
         public bool ShouldWindowSlide()
         {
-            if(window.Count == _windowSize)
+            if (window.Count == _windowSize)
             {
                 return true;
-            }else if(window.Count < _windowSize)
+            }
+            else if (window.Count < _windowSize)
             {
                 return false;
             }
@@ -327,7 +365,7 @@ namespace COD_Base.Algorithms
 
         protected CODEvent FindMin()
         {
-            if(CODEventQueue.Count != 0)
+            if (CODEventQueue.Count != 0)
             {
                 return CODEventQueue.ElementAt(0);
             }
