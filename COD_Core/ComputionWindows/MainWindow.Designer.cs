@@ -545,7 +545,7 @@
         private System.Windows.Forms.Label label3;
         private System.Windows.Forms.Button bt_modelInfo_testEngineClass;
         private System.Windows.Forms.Label label4;
-        private System.Windows.Forms.TextBox tb_dataFilePath;
+        public System.Windows.Forms.TextBox tb_dataFilePath;
         private System.Windows.Forms.Button bt_dataFilePath_scan;
         private System.Windows.Forms.Button bt_simulationComputing;
         private System.Windows.Forms.GroupBox gb_modelInfo;

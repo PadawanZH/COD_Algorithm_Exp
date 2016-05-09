@@ -66,7 +66,16 @@ namespace ComputionWindows
 
         public void DrawDataPoint(Graphics graphics, PointF Origin, float XPivotLength, float YPivotLength)
         {
-            StreamReader sr = new StreamReader(@"E:\Workspace\C#\COD_Algorithm_Exp\COD_Core\NormalizeData\bin\Debug\newData.txt");
+            string path = @"E:\Workspace\C#\COD_Algorithm_Exp\COD_Core\NormalizeData\bin\Debug\newData.txt";
+            if(Owner is MainWindow)
+            {
+                MainWindow mainWindow = (MainWindow)Owner;
+                if(mainWindow.tb_dataFilePath.Text != "")
+                {
+                    path = mainWindow.tb_dataFilePath.Text;
+                }
+            }
+            StreamReader sr = new StreamReader(path);
             while (!sr.EndOfStream)
             {
                 string line = sr.ReadLine();

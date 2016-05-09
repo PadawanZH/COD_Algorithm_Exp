@@ -27,7 +27,6 @@ namespace ComputionWindows {
         private bool isDLLPathSet = false;
         public MainWindow() {
             InitializeComponent();
-
             algorithmHandler = new AlgorithmMgr();
             configuration = new Configuration();
         }
@@ -227,7 +226,12 @@ namespace ComputionWindows {
 
         private void bt_simulationComputing_Click(object sender, EventArgs e) {//触发仿真计算
             SetupConfiguration();
-            
+
+            if(tb_DataDimension.Text == "2")
+            {
+                Form displayField = new _2D_DisplayField();
+                displayField.Show(this);
+            }
             /*bt_modelInfo_add.Enabled = false;
 
             if (runner.AddSimulationProperties(TriggerTime)) {
@@ -257,7 +261,6 @@ namespace ComputionWindows {
                 configuration.SetProperty(PropertiesType.DataFilePath, tb_dataFilePath.Text);
                 configuration.SetProperty(PropertiesType.DataDimension, Convert.ToInt32(tb_DataDimension.Text));
                 configuration.SetProperty(PropertiesType.Delimiter, Convert.ToChar(tb_DataDelimiter.Text));
-                MessageBox.Show(tb_DataDelimiter.Text);
                 configuration.SetProperty(PropertiesType.WindowSize, Convert.ToInt32(tb_WindowSize.Text));
                 configuration.SetProperty(PropertiesType.SlideSpan, Convert.ToInt32(tb_SlideSpan.Text));
                 configuration.SetProperty(PropertiesType.QueryRange, Convert.ToDouble(tb_QueryRange.Text));
