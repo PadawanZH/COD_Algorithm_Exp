@@ -42,9 +42,10 @@ namespace COD_Base.Core
 
         public IAlgorithm _algorithm;
         public IDataAdapter _dataSource;
-        public Configuration _config;
+        public IConfiguration _config;
 
         public int processedTupleCount;
+        public double tupleRate;
         public int outlierHistoryCount;
         public double avgOutlierRateAgainstWindowSize;
         public int windowSlideCount;
@@ -61,11 +62,12 @@ namespace COD_Base.Core
 
         public long startTime;
         public long endTime;
+        public long lastPeekTime;
+        public int processedTupleCountAtLastPeekTime;
 
         public AlgorithmMgr(IAlgorithm algorithm, IDataAdapter dataSource, Configuration _config)
         {
             Init();
-
             _algorithm = algorithm;
             _dataSource = dataSource;
             windowSize = (int)_config.GetProperty(PropertiesType.WindowSize);
@@ -90,7 +92,7 @@ namespace COD_Base.Core
             OutlierIndexList = new List<int>();
         }
 
-        public bool AddAlgorithm(Dictionary<string, string> modelInfo)
+        public bool AssembleAlgorithmInstance(Dictionary<string, string> modelInfo)
         {
             string oldDirectory = Directory.GetCurrentDirectory();
             try
@@ -119,20 +121,41 @@ namespace COD_Base.Core
             }
         }
 
-        public void AddDataDource(IDataAdapter dataSource)
+        public bool InitComponent(IConfiguration config)
         {
-            _dataSource = dataSource;
+            AddConfiguration(config);
+            InitDataDource(config);
+            InitAlgorithm(config);
+
+            return IsReadyToRun();
         }
 
-        public void AddConfiguration(Configuration config)
+        public void InitAlgorithm(IConfiguration config)
+        {
+            _algorithm.Initialize(config);
+        }
+
+        public void InitDataDource(IConfiguration config)
+        {
+            _dataSource = new COD_Base.Dynamic.DataAccess.DataAdapter(config);
+        }
+
+        public void AddConfiguration(IConfiguration config)
         {
             _config = config;
             ReadConfig(config);
         }
 
-        protected void ReadConfig(Configuration config)
+        protected void ReadConfig(IConfiguration config)
         {
-            windowSize = (int)_config.GetProperty(PropertiesType.WindowSize);
+            if(_config.GetProperty(PropertiesType.WindowSize) != null)
+            {
+                windowSize = (int)_config.GetProperty(PropertiesType.WindowSize);
+            }
+            else
+            {
+                ExceptionUtil.SendErrorEventAndLog(GetType().ToString(), "配置没有正确被配置,WindowSize为空");
+            }
         }
 
         public double TotalTimeInSec
@@ -157,7 +180,10 @@ namespace COD_Base.Core
         /// <returns></returns>
         public bool IsReadyToRun()
         {
-            if (_config != null && _config.GetProperty(PropertiesType.WindowSize) != null)
+            if (_config != null 
+                && windowSize == (int)_config.GetProperty(PropertiesType.WindowSize) 
+                && _dataSource.IsReadyToRun() 
+                && _algorithm.IsReadyToRun())
             {
                 return true;
             }
@@ -172,7 +198,19 @@ namespace COD_Base.Core
         /// </summary>
         public void Start()
         {
+            Thread algorithmRunningThread = new Thread(RunAlgFunc);
+            algorithmRunningThread.Start();
+        }
 
+        public void RunAlgFunc()
+        {
+            while (_dataSource.HaveNextTuple())
+            {
+                ITuple tuple = _dataSource.GetNextTuple();
+                _algorithm.ReceiveNewTupe(tuple);
+            }
+            //触发NoMoreTuple事件
+            _dataSource.GetNextTuple();
         }
 
         public void OnDisposal()
@@ -208,6 +246,8 @@ namespace COD_Base.Core
                     if (processedTupleCount == 0)
                     {
                         startTime = System.DateTime.Now.Ticks;
+                        processedTupleCountAtLastPeekTime = 0;
+                        lastPeekTime = startTime;
                     }
                     processedTupleCount++;
                     break;
@@ -244,6 +284,7 @@ namespace COD_Base.Core
                     {
                         avgOutlierRateAgainstWindowSize = (double)outliersCountInCurrentWindow / (double)processedTupleCount;
                     }
+                    tupleRate = (double)processedTupleCount / (double)( (endTime - startTime) / 10000000.0);
                     break;
             }
         }

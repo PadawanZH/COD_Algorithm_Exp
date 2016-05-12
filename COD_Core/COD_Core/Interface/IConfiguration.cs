@@ -11,5 +11,7 @@ namespace COD_Base.Interface
     /// </summary>
     public interface IConfiguration
     {
+        Object GetProperty(PropertiesType key);
+        void SetProperty(PropertiesType key, Object value);
     }
 }

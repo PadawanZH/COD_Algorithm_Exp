@@ -18,5 +18,9 @@ namespace COD_Base.Interface
         /// <param name="newTuple">新到的tuple对象</param>
         /// <param name="CurrentStep">当前的步数，流数据一个tuple到来算作一步</param>
         /// 
+
+        void Initialize(IConfiguration config);
+
+        bool IsReadyToRun();
     }
 }

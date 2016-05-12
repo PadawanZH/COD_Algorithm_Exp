@@ -16,6 +16,8 @@ namespace ContinuousOutlierDetection
         //key: ID, value: expTime
         public Dictionary<int, int> preceedingNeighboursExpTime;
 
+        public static int duplicateCount = 0;
+
         public CODTuple(ITuple t)
         {
             tuple = t;
@@ -23,24 +25,27 @@ namespace ContinuousOutlierDetection
             preceedingNeighboursExpTime = new Dictionary<int, int>();
         }
 
-        public int FindMinExpTime()
+        public CODEventTrigger FindMinExpTime()
         {
             int minTime = int.MaxValue;
-            foreach (int expTime in preceedingNeighboursExpTime.Values)
+            int PreceedingNeighborID = -1;
+            foreach (KeyValuePair<int, int> kvp in preceedingNeighboursExpTime)
             {
-                if (minTime > expTime)
+                if (minTime > kvp.Value)
                 {
-                    minTime = expTime;
+                    minTime = kvp.Value;
+                    PreceedingNeighborID = kvp.Key;
                 }
             }
-            return minTime;
+            return new CODEventTrigger(minTime,PreceedingNeighborID);
         }
 
         public void DeleteFromPreceedingExpTime(int tupleID)
         {
             if (preceedingNeighboursExpTime.Remove(tupleID) == false)
             {
-                throw new Exception("Algorithm " + GetType().ToString() + " is tring to DeleteFromPreceedingExpTime with the tupleID is" + tupleID + ". And the owner of this dictoinary is " + tuple.ID);
+                duplicateCount++;
+                //throw new Exception("Algorithm " + GetType().ToString() + " is tring to DeleteFromPreceedingExpTime with the tupleID is" + tupleID + ". And the owner of this dictoinary is " + tuple.ID);
             }
         }
 
@@ -53,15 +58,46 @@ namespace ContinuousOutlierDetection
         }
     }
 
+    public class CODTupleComparorByExpTime : IComparer<CODTuple>
+    {
+        public int Compare(CODTuple x, CODTuple y)
+        {
+            if (x.tuple.DepartStep < y.tuple.DepartStep)
+            {
+                return 1;
+            }
+            else if (x.tuple.DepartStep == y.tuple.DepartStep)
+            {
+                return 0;
+            }
+            else
+            {
+                return -1;
+            }
+        }
+    }
+
+    public class CODEventTrigger
+    {
+        public int eventTime;
+        public int triggerTupleID;
+
+        public CODEventTrigger(int eventTime, int triggerTupleID)
+        {
+            this.eventTime = eventTime;
+            this.triggerTupleID = triggerTupleID;
+        }
+    }
+
     public class CODEvent
     {
         public CODTuple codTuple;
-        public int eventTime;
+        public CODEventTrigger eventTrigger;
 
-        public CODEvent(CODTuple t, int e)
+        public CODEvent(CODTuple t, CODEventTrigger e)
         {
             codTuple = t;
-            eventTime = e;
+            eventTrigger = e;
         }
 
         public void Dispose()
@@ -71,26 +107,36 @@ namespace ContinuousOutlierDetection
     }
 
     /// <summary>
-    /// 应当是从小到大排序
+    /// 应当是从小到大排序(当eventTime相等时按tuple到达顺序排序)
     /// </summary>
     public class CODEventComparor : IComparer<CODEvent>
     {
         public int Compare(CODEvent x, CODEvent y)
         {
-            if (x.eventTime > y.eventTime)
+            if (x.eventTrigger.eventTime > y.eventTrigger.eventTime)
             {
                 return 1;
             }
-            else if (x.eventTime == y.eventTime)
+            else if (x.eventTrigger.eventTime == y.eventTrigger.eventTime)
             {
-                return 0;
+                if(x.eventTrigger.triggerTupleID > y.eventTrigger.triggerTupleID)
+                {
+                    return 1;
+                }
+                else if(x.eventTrigger.triggerTupleID == y.eventTrigger.triggerTupleID)
+                {
+                    return 0;
+                }
+                else
+                {
+                    return -1;
+                }
             }
             else
             {
                 return -1;
             }
         }
-
     }
     /// <summary>
     /// WindowSlide和Departure应当在Algorithm内部完成
@@ -98,7 +144,9 @@ namespace ContinuousOutlierDetection
     /// </summary>
     public class BasicContinuousOutlierDetection : IAlgorithm
     {
-        public Configuration _config;
+
+        public List<int> outliers = new List<int>();
+        public IConfiguration _config;
 
         public Queue<CODTuple> window;
 
@@ -114,27 +162,35 @@ namespace ContinuousOutlierDetection
         protected double range;
         protected int neighbourThreshold;
 
-        public BasicContinuousOutlierDetection(Configuration config)
-        {
-            _config = config;
-            Initialize();
-        }
-
         public BasicContinuousOutlierDetection()
         {
             _config = null;
         }
 
-        public void Initialize()
+        public void Initialize(IConfiguration config)
         {
-            currentStep = 0;
-            _slideSpan = (int)_config.GetProperty(PropertiesType.SlideSpan);
-            _windowSize = (int)_config.GetProperty(PropertiesType.WindowSize);
+            if(     config != null
+                && config.GetProperty(PropertiesType.SlideSpan) != null
+                && config.GetProperty(PropertiesType.WindowSize) != null
+                && config.GetProperty(PropertiesType.QueryRange) != null
+                && config.GetProperty(PropertiesType.KNeighbourThreshold) != null)
+            {
+                _config = config;
+                currentStep = 0;
+                _slideSpan = (int)config.GetProperty(PropertiesType.SlideSpan);
+                _windowSize = (int)config.GetProperty(PropertiesType.WindowSize);
 
-            range = (double)_config.GetProperty(PropertiesType.QueryRange);
-            neighbourThreshold = (int)_config.GetProperty(PropertiesType.KNeighbourThreshold);
+                range = (double)config.GetProperty(PropertiesType.QueryRange);
+                neighbourThreshold = (int)config.GetProperty(PropertiesType.KNeighbourThreshold);
 
-            CODEventQueue = new SortedSet<CODEvent>(new CODEventComparor());
+                window = new Queue<CODTuple>();
+                CODEventQueue = new SortedSet<CODEvent>(new CODEventComparor());
+            }
+            else
+            {
+                ExceptionUtil.SendErrorEventAndLog(GetType().ToString(), "初始算法错误，config中信息不足");
+            }
+            
         }
 
         public bool IsReadyToRun()
@@ -143,7 +199,9 @@ namespace ContinuousOutlierDetection
                 &&  _config.GetProperty(PropertiesType.SlideSpan) != null
                 &&  _config.GetProperty(PropertiesType.WindowSize) != null
                 &&  _config.GetProperty(PropertiesType.QueryRange) != null
-                && _config.GetProperty(PropertiesType.KNeighbourThreshold) != null)
+                && _config.GetProperty(PropertiesType.KNeighbourThreshold) != null
+                && CODEventQueue != null
+                && window != null)
             {
                 return true;
             }
@@ -161,14 +219,6 @@ namespace ContinuousOutlierDetection
             }
         }
 
-        public void FillWindow()
-        {
-            for(int i = 0; i < _windowSize; i++)
-            {
-
-            }
-        }
-
         /// <summary>
         /// 该函数为对外接口，负责接收新到的tuple
         /// </summary>
@@ -178,24 +228,22 @@ namespace ContinuousOutlierDetection
             newTuple.ArrivalStep = currentStep;
             newTuple.DepartStep = ComputeDepartStep();
             newTuple.IsOutlier = false;
-            //目前一步一个tuple，故可以如此赋值
-            newTuple.ID = currentStep;
-            CODTuple newCODTuple = new CODTuple(newTuple);
-            if (currentStep >= _windowSize)
-            {
-                if (ShouldWindowSlide())
-                {
-                    for (int i = 0; i < _slideSpan; i++)
-                    {
-                        CODTuple oldTuple = window.Dequeue();
-                        Departure(oldTuple, currentStep);
-                    }
-                }
 
-                //Arrive函数是否要在窗口弹出之前执行呢？我觉得是在之后，因为窗口的定义为”总是维护最近的n个object“
-                //而arrive应当是以window之内作为执行范围的，若在窗口弹出前执行，岂不是Arrive的执行范围变成了n+1? 所以我将Arrive放在这里
-                Arrive(newCODTuple, currentStep);
+            Event anEvent = new Event(GetType().ToString(), EventType.NewTupleArrive);
+            anEvent.AddAttribute(EventAttributeType.Tuple, newTuple);
+            EventDistributor.GetInstance().SendEvent(anEvent);
+
+            //目前一步一个tuple，故可以如此赋值
+            CODTuple newCODTuple = new CODTuple(newTuple);
+            if (ShouldWindowSlide())
+            {
+                SlideWindow();
             }
+
+            //Arrive函数是否要在窗口弹出之前执行呢？我觉得是在之后，因为窗口的定义为”总是维护最近的n个object“
+            //而arrive应当是以window之内作为执行范围的，若在窗口弹出前执行，岂不是Arrive的执行范围变成了n+1? 所以我将Arrive放在这里
+            Arrive(newCODTuple, currentStep);
+
             AddTupleIntoWindow(newCODTuple);
             currentStep++;
         }
@@ -207,10 +255,10 @@ namespace ContinuousOutlierDetection
         /// <param name="currentStep"></param>
         public void Arrive(CODTuple newCODTuple, int currentStep)
         {
-            Dictionary<CODTuple, double> neighbours = RangeQuery(newCODTuple.tuple, range, neighbourThreshold);
-            for (int i = 0; i < neighbours.Keys.Count; i++)
+            SortedSet<CODTuple> neighbours = RangeQuery(newCODTuple.tuple, range, neighbourThreshold);
+            for (int i = 0; i < neighbours.Count; i++)
             {
-                CODTuple q = neighbours.Keys.ElementAt(i);
+                CODTuple q = neighbours.ElementAt(i);
                 q.numberOfSucceedingNeighbour++;
 
                 if (q.tuple.IsOutlier && (q.numberOfSucceedingNeighbour + q.preceedingNeighboursExpTime.Count == neighbourThreshold))
@@ -233,28 +281,126 @@ namespace ContinuousOutlierDetection
             }
             else
             {
-                int eventTriggerTime = newCODTuple.FindMinExpTime();
                 Insert(newCODTuple);
             }
             //AddTupleIntoWindow(newCODTuple); //在ReceiveTuple中调用加入Window的动作
         }
 
+        public int MisCalTimeCount = 0;
         public void Departure(CODTuple oldTuple, int currentStep)
         {
             CODEvent x = FindMin();
-            while (x.eventTime == currentStep)
+            if(x != null)
+            {
+                while (x.eventTrigger.eventTime == currentStep && FindMin() != null )
+                {
+                    if (FindMin().codTuple.preceedingNeighboursExpTime.Keys.Contains(oldTuple.tuple.ID))
+                    {
+                        x = ExtractMin();
+                        x.codTuple.DeleteFromPreceedingExpTime(oldTuple.tuple.ID);
+
+                        if (x.codTuple.numberOfSucceedingNeighbour + x.codTuple.preceedingNeighboursExpTime.Count < neighbourThreshold)
+                        {
+                            AddToOutlier(x.codTuple.tuple);
+                        }
+                        else
+                        {
+                            //update the event time for next check
+                            Insert(x.codTuple);
+                        }
+                    }
+                    else
+                    {
+                        MisCalTimeCount++;
+                        break;
+                    }
+                    
+                }
+            }
+            
+            //free the memory
+            oldTuple.Dispose();
+        }
+
+        
+        public void DepartureNotDuplicateCompute(CODTuple oldTuple, int currentStep)
+        {
+            CODEvent x = FindMin();
+            while (x != null && x.eventTrigger.eventTime < currentStep)
             {
                 x = ExtractMin();
-                x.codTuple.DeleteFromPreceedingExpTime(oldTuple.tuple.ID);
+            }
 
-                if (x.codTuple.numberOfSucceedingNeighbour + x.codTuple.preceedingNeighboursExpTime.Count < neighbourThreshold)
+            x = FindMin();
+            if (x != null)
+            {
+                while (x.eventTrigger.eventTime == currentStep && FindMin() != null)
                 {
-                    AddToOutlier(x.codTuple.tuple);
+                    if (FindMin().codTuple.preceedingNeighboursExpTime.Keys.Contains(oldTuple.tuple.ID))
+                    {
+                        x = ExtractMin();
+                        x.codTuple.DeleteFromPreceedingExpTime(oldTuple.tuple.ID);
+
+                        if (x.codTuple.numberOfSucceedingNeighbour + x.codTuple.preceedingNeighboursExpTime.Count < neighbourThreshold)
+                        {
+                            AddToOutlier(x.codTuple.tuple);
+                        }
+                        else if (x.codTuple.numberOfSucceedingNeighbour < neighbourThreshold)
+                        {
+                            //update the event time for next check
+                            Insert(x.codTuple);
+                        }
+                        else
+                        {
+                            SavedCount++;
+                        }
+                    }
+                    else
+                    {
+                        MisCalTimeCount++;
+                        break;
+                    }
+
                 }
-                else
+            }
+
+            //free the memory
+            oldTuple.Dispose();
+        }
+
+        public int SavedCount = 0;
+        public void DepartureNotIncludingSafeInlier(CODTuple oldTuple, int currentStep)
+        {
+            CODEvent x = FindMin();
+            if (x != null)
+            {
+                while (x.eventTrigger.eventTime == currentStep && FindMin() != null)
                 {
-                    //update the event time for next check
-                    Insert(x.codTuple);
+                    if (FindMin().codTuple.preceedingNeighboursExpTime.Keys.Contains(oldTuple.tuple.ID))
+                    {
+                        x = ExtractMin();
+                        x.codTuple.DeleteFromPreceedingExpTime(oldTuple.tuple.ID);
+
+                        if (x.codTuple.numberOfSucceedingNeighbour + x.codTuple.preceedingNeighboursExpTime.Count < neighbourThreshold)
+                        {
+                            AddToOutlier(x.codTuple.tuple);
+                        }
+                        else if(x.codTuple.numberOfSucceedingNeighbour < neighbourThreshold)
+                        {
+                            //update the event time for next check
+                            Insert(x.codTuple);
+                        }
+                        else
+                        {
+                            SavedCount++;
+                        }
+                    }
+                    else
+                    {
+                        MisCalTimeCount++;
+                        break;
+                    }
+
                 }
             }
 
@@ -274,21 +420,29 @@ namespace ContinuousOutlierDetection
             CODEventQueue = null;
         }
 
-        protected Dictionary<CODTuple, double> RangeQuery(ITuple newTuple, double range, int neighbourThreshold)
+        protected SortedSet<CODTuple> RangeQuery(ITuple newTuple, double range, int neighbourThreshold)
         {
-            double distance = 0;
-            Dictionary<CODTuple, double> neighbours = new Dictionary<CODTuple, double>();
+            double distance;
+            double qurc_rang = range * range;
+            bool flag;
+            SortedSet<CODTuple> neighbours = new SortedSet<CODTuple>(new CODTupleComparorByExpTime());
             foreach (CODTuple codTuple in window)
             {
+                flag = false;
+                distance = 0;
                 for (int i = 0; i < codTuple.tuple.Dimension; i++)
                 {
-                    distance += (codTuple.tuple.Data[i] * codTuple.tuple.Data[i]) + (codTuple.tuple.Data[i] * codTuple.tuple.Data[i]);
-                    if (distance > range)
+                    distance += (newTuple.Data[i] - codTuple.tuple.Data[i])* (newTuple.Data[i] - codTuple.tuple.Data[i]);
+                    if (distance > qurc_rang)
                     {
-                        continue;
+                        flag = true;
+                        break;
                     }
                 }
-                neighbours.Add(codTuple, distance);
+                if(flag == false)
+                {
+                    neighbours.Add(codTuple);
+                }
             }
             return neighbours;
         }
@@ -298,7 +452,7 @@ namespace ContinuousOutlierDetection
             tuple.IsOutlier = false;
 
             Event e = new Event("an tuple become inlier", EventType.OutlierBecomeInlier);
-            e.AddAttribute(EventAttributeType.Tuple, tuple);
+            e.AddAttribute(EventAttributeType.TupleID, tuple.ID);
             EventDistributor.GetInstance().SendEvent(e);
         }
 
@@ -307,19 +461,40 @@ namespace ContinuousOutlierDetection
             tuple.IsOutlier = true;
 
             Event e = new Event("an tuple become outlier", EventType.InlierBecomeOutlier);
-            e.AddAttribute(EventAttributeType.Tuple, tuple);
+            e.AddAttribute(EventAttributeType.TupleID, tuple.ID);
+            EventDistributor.GetInstance().SendEvent(e);
+
+            outliers.Add(tuple.ID);
+        }
+
+        public void SlideWindow()
+        {
+            
+            for (int i = 0; i < _slideSpan; i++)
+            {
+                CODTuple oldTuple = window.Dequeue();
+
+                Event anEvent = new Event("Object Depart", EventType.OldTupleDepart);
+                anEvent.AddAttribute(EventAttributeType.TupleID, oldTuple.tuple.ID);
+                EventDistributor.GetInstance().SendEvent(anEvent);
+
+                //Departure(oldTuple, currentStep);
+                //DepartureNotIncludingSafeInlier(oldTuple, currentStep);
+                DepartureNotDuplicateCompute(oldTuple, currentStep);
+            }
+
+            Event e = new Event("window has just Slided", EventType.WindowSlide);
             EventDistributor.GetInstance().SendEvent(e);
         }
 
-        public void AssignKNearestPreceedingNeighboursToTuple(CODTuple newTuple, Dictionary<CODTuple, double> neighbours)
+        public void AssignKNearestPreceedingNeighboursToTuple(CODTuple newTuple, SortedSet<CODTuple> neighbours)
         {
-            Dictionary<CODTuple, double> sortedNeighbour = (from entry in neighbours orderby entry.Value ascending select entry).ToDictionary(pair => pair.Key, pair => pair.Value);
             Dictionary<int, int> k_NearestNeighbour = new Dictionary<int, int>();
-            for (int i = 0; i < neighbourThreshold && i < sortedNeighbour.Count; i++)
+            for (int i = 0; i < neighbourThreshold && i < neighbours.Count; i++)
             {
                 int neighbourID, neighbourExpTime;
-                neighbourID = sortedNeighbour.ElementAt(i).Key.tuple.ID;
-                neighbourExpTime = sortedNeighbour.ElementAt(i).Key.tuple.DepartStep;
+                neighbourID = neighbours.ElementAt(i).tuple.ID;
+                neighbourExpTime = neighbours.ElementAt(i).tuple.DepartStep;
                 k_NearestNeighbour.Add(neighbourID, neighbourExpTime);
             }
             newTuple.preceedingNeighboursExpTime = k_NearestNeighbour;
@@ -352,15 +527,21 @@ namespace ContinuousOutlierDetection
         /// <returns></returns>
         protected int ComputeDepartStep()
         {
-            int departStep = _windowSize + 3 * (int)(currentStep / 3);
+            int departStep = _windowSize + _slideSpan * (int)(currentStep / _slideSpan);
             return departStep;
         }
 
         #region Functions For EventQueue
+        public int insertCount = 0;
         protected void Insert(CODTuple q)
         {
+            
             CODEvent newCODEvent = new CODEvent(q, q.FindMinExpTime());
-            CODEventQueue.Add(newCODEvent);
+            if(newCODEvent.eventTrigger.eventTime != int.MaxValue)
+            {
+                CODEventQueue.Add(newCODEvent);
+                insertCount++;
+            }
         }
 
         protected CODEvent FindMin()
@@ -371,7 +552,7 @@ namespace ContinuousOutlierDetection
             }
             else
             {
-                throw new Exception("Algorithm " + GetType().ToString() + " is tring to \"findMin\" in eventQueue but actually noting in Queue.");
+                return null;
             }
         }
 
@@ -385,7 +566,7 @@ namespace ContinuousOutlierDetection
             }
             else
             {
-                throw new Exception("Algorithm " + GetType().ToString() + " is tring \"extractMin\" in eventQueue but actually noting in Queue.");
+                return null;
             }
         }
         #endregion

@@ -6,30 +6,55 @@ using System.Threading.Tasks;
 using NUnit.Framework;
 using ContinuousOutlierDetection;
 using COD_Base.Core;
+using COD_Base;
 
 namespace COD_UnitTest
 {
     [TestFixture]
     public class CODAlgorithmUnitTest
     {
-        BasicContinuousOutlierDetection algorithm;
+        AlgorithmMgr algHandler = new AlgorithmMgr();
         [Test]
         public void TestEventQueue()
         {
-            Configuration config = new Configuration();
+            /*algHandler._algorithm = new BasicContinuousOutlierDetection();
+            Configuration configuration = new Configuration();
+            configuration.SetProperty(PropertiesType.DataFilePath, @"E:\Workspace\C#\COD_Algorithm_Exp\COD_Core\NormalizeData\bin\Debug\newData.txt");
+            configuration.SetProperty(PropertiesType.DataDimension, 2);
+            configuration.SetProperty(PropertiesType.Delimiter, ' ');
+            configuration.SetProperty(PropertiesType.WindowSize, 10000);
+            configuration.SetProperty(PropertiesType.SlideSpan, 1);
+            configuration.SetProperty(PropertiesType.QueryRange, 1.41);
+            configuration.SetProperty(PropertiesType.KNeighbourThreshold, 50);
+            if (algHandler.InitComponent(configuration))
+            {
+                algHandler.Start();
+                Console.ReadKey();
+            }*/
 
-            /*algorithm = new BasicContinuousOutlierDetection();
-            algorithm.Initialize();
+            BasicContinuousOutlierDetection basic = new BasicContinuousOutlierDetection();
+            SortedSet<CODEvent> CODEventQueue = new SortedSet<CODEvent>(new CODEventComparor());
 
-            algorithm.CODEventQueue.Add(new CODEvent(new CODTuple(null), 30));
-            algorithm.CODEventQueue.Add(new CODEvent(new CODTuple(null), 20));
-            algorithm.CODEventQueue.Add(new CODEvent(new CODTuple(null), 100));
-            algorithm.CODEventQueue.Add(new CODEvent(new CODTuple(null), 10));
+            for(int j = 10; j > 0; j--)
+            {
+                for (int i = 10; i > 0; i--)
+                {
+                    COD_Base.Dynamic.Entity.Tuple t = new COD_Base.Dynamic.Entity.Tuple();
+                    t.ArrivalStep = i;
+                    ContinuousOutlierDetection.CODTuple codtuple = new CODTuple(t);
+                    CODEvent codE = new CODEvent(codtuple, new CODEventTrigger(j,i));
+                    CODEventQueue.Add(codE);
+                }
+            }
 
-            Assert.AreEqual(algorithm.CODEventQueue.ElementAt(0).eventTime, 10);
-            Assert.AreEqual(algorithm.CODEventQueue.ElementAt(1).eventTime, 20);
-            Assert.AreEqual(algorithm.CODEventQueue.ElementAt(2).eventTime, 30);
-            Assert.AreEqual(algorithm.CODEventQueue.ElementAt(3).eventTime, 100);*/
+            return;
+
+        }
+
+        public static void Main()
+        {
+            CODAlgorithmUnitTest c = new CODAlgorithmUnitTest();
+            c.TestEventQueue();
         }
     }
 }

@@ -28,7 +28,9 @@
         /// </summary>
         private void InitializeComponent()
         {
+            this.components = new System.ComponentModel.Container();
             this.pl_Canvas = new System.Windows.Forms.Panel();
+            this.RefreshDataPointsTimer = new System.Windows.Forms.Timer(this.components);
             this.SuspendLayout();
             // 
             // pl_Canvas
@@ -42,6 +44,11 @@
             this.pl_Canvas.Size = new System.Drawing.Size(851, 535);
             this.pl_Canvas.TabIndex = 0;
             this.pl_Canvas.Paint += new System.Windows.Forms.PaintEventHandler(this.pl_Canvas_Paint);
+            // 
+            // RefreshDataPointsTimer
+            // 
+            this.RefreshDataPointsTimer.Interval = 1000;
+            this.RefreshDataPointsTimer.Tick += new System.EventHandler(this.RefreshDataPointsTimer_Tick);
             // 
             // _2D_DisplayField
             // 
@@ -58,5 +65,6 @@
         #endregion
 
         private System.Windows.Forms.Panel pl_Canvas;
+        private System.Windows.Forms.Timer RefreshDataPointsTimer;
     }
 }

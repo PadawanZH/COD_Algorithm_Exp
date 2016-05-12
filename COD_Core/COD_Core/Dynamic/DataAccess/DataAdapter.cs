@@ -18,9 +18,9 @@ namespace COD_Base.Dynamic.DataAccess
         protected string _dataFilePath;
         protected int _dataDimension;
         protected StreamReader fileReader;
-        protected char[] _delimiter;
+        protected char _delimiter;
 
-        public Configuration _config;
+        public IConfiguration _config;
 
         public string DataFilePath
         {
@@ -78,7 +78,7 @@ namespace COD_Base.Dynamic.DataAccess
         /// 
         /// </summary>
         /// <param name="config">需要<see cref="PropertiesType.DataFilePath"/>,<see cref="PropertiesType.DataDimension"/>,<see cref="PropertiesType.Delimiter"/></param>
-        public DataAdapter(Configuration config)
+        public DataAdapter(IConfiguration config)
         {
             _config = config;
             Init();
@@ -86,17 +86,27 @@ namespace COD_Base.Dynamic.DataAccess
 
         public void Init()
         {
-            DataFilePath = (string)_config.GetProperty(PropertiesType.DataFilePath);
-            Dimension = (int)_config.GetProperty(PropertiesType.DataDimension);
-            _delimiter = (char[])_config.GetProperty(PropertiesType.Delimiter);
+            if(_config != null 
+                &&_config.GetProperty(PropertiesType.DataFilePath) != null
+                && _config.GetProperty(PropertiesType.DataDimension) != null
+                && _config.GetProperty(PropertiesType.Delimiter) != null)
+            {
+                DataFilePath = (string)_config.GetProperty(PropertiesType.DataFilePath);
+                Dimension = (int)_config.GetProperty(PropertiesType.DataDimension);
+                _delimiter = (char)_config.GetProperty(PropertiesType.Delimiter);
+            }
+            else
+            {
+                ExceptionUtil.SendErrorEventAndLog(GetType().ToString(), "初始化DataSource时发生错误，Configuration信息不足");
+            }
         }
 
         public bool IsReadyToRun()
         {
-            if(     _config != null 
-                &&  _config.GetProperty(PropertiesType.DataFilePath) != null
-                &&  _config.GetProperty(PropertiesType.DataDimension) != null
-                &&  _config.GetProperty(PropertiesType.Delimiter) != null)
+            if( _config != null
+                && DataFilePath == (string)_config.GetProperty(PropertiesType.DataFilePath)
+                && Dimension == (int)_config.GetProperty(PropertiesType.DataDimension)
+                && _delimiter == (char)_config.GetProperty(PropertiesType.Delimiter))
             {
                 return true;
             }
@@ -106,12 +116,12 @@ namespace COD_Base.Dynamic.DataAccess
             }
         }
 
-        public void TestInit()
+        /*public void TestInit()
         {
             DataFilePath = System.Environment.CurrentDirectory + "\\InputData\\covtype.data";
             Dimension = 55;
             _delimiter = new char[] { ',' };
-        }
+        }*/
 
         public ITuple GetNextTuple()
         {
@@ -125,6 +135,7 @@ namespace COD_Base.Dynamic.DataAccess
                         //End of file, send the eof event
                         Event EofEvent = new Event(GetType().ToString(), EventType.NoMoreTuple);
                         EventDistributor.GetInstance().SendEvent(EofEvent);
+                        fileReader.Close();
                         return null;
                     }
                     else
@@ -142,6 +153,18 @@ namespace COD_Base.Dynamic.DataAccess
             {
                 ExceptionUtil.SendErrorEventAndLog(GetType().ToString(), "fileReader is null");
                 return null;
+            }
+        }
+
+        public bool HaveNextTuple()
+        {
+            if (fileReader != null)
+            {
+                return !fileReader.EndOfStream;
+            }
+            else
+            {
+                return false;
             }
         }
 
@@ -172,7 +195,7 @@ namespace COD_Base.Dynamic.DataAccess
         /// 验证读取的一行数据是否能转换为一个tuple
         /// </summary>
         /// <returns></returns>
-        public bool ValidateData(string[] data)
+        protected bool ValidateData(string[] data)
         {
             if(data.Count() != Dimension)
             {
@@ -185,7 +208,7 @@ namespace COD_Base.Dynamic.DataAccess
         /// 对Tuple中的数据属性进行初始化
         /// </summary>
         /// <param name="data"></param>
-        public virtual ITuple initTuple(string[] data)
+        protected virtual ITuple initTuple(string[] data)
         {
             ITuple tuple = new Entity.Tuple();
             List<double> NumData = new List<double>();

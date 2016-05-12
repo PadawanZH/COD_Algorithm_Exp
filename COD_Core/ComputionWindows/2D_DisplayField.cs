@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
@@ -19,8 +20,15 @@ namespace ComputionWindows
     public partial class _2D_DisplayField : Form, COD_Base.Interface.IListener
     {
         Graphics panelGraphics;
+        Graphics backgroundImageGraphics;
         Bitmap background;
-        List<ITuple> dataPoints;
+        Bitmap pointMap;
+
+        Dictionary<int, ITuple> dataPoints;
+
+        private static readonly object lockRoot = new object();
+
+        bool Drawing;
         public _2D_DisplayField()
         {
             InitializeComponent();
@@ -28,13 +36,15 @@ namespace ComputionWindows
             SetStyle(ControlStyles.AllPaintingInWmPaint, true); // 禁止擦除背景.
             SetStyle(ControlStyles.DoubleBuffer, true); // 双缓冲\
 
-            dataPoints = new List<ITuple>();
+            dataPoints = new Dictionary<int, ITuple>();
 
             panelGraphics = pl_Canvas.CreateGraphics();
 
-            EventType[] acceptedEventTypeList = { EventType.NewTupleArrive, EventType.NoMoreTuple, EventType.InlierBecomeOutlier, EventType.OutlierBecomeInlier, EventType.WindowSlide };
+            EventType[] acceptedEventTypeList = { EventType.NewTupleArrive, EventType.InlierBecomeOutlier, EventType.OutlierBecomeInlier, EventType.OldTupleDepart, EventType.NoMoreTuple};
 
             EventDistributor.GetInstance().SubcribeListenerWithFullAcceptedTypeList(this, acceptedEventTypeList);
+
+            RefreshDataPointsTimer.Start();
         }
 
         private void pl_Canvas_Paint(object sender, PaintEventArgs e)
@@ -43,20 +53,7 @@ namespace ComputionWindows
             panelGraphics = pl_Canvas.CreateGraphics();
             /*CoordinateDrawer coordinate = new CoordinateDrawer(pl_Canvas.CreateGraphics(), new Point(25, 25));
             coordinate.DrawingX(pl_Canvas.Width - 10).DrawingY(pl_Canvas.Height - 10);*/
-            background = null;
-            background = new Bitmap(pl_Canvas.Width, pl_Canvas.Height);
-            Graphics backgroundImageGraphics = Graphics.FromImage(background);
-            using (backgroundImageGraphics)
-            {
-                backgroundImageGraphics.TextRenderingHint = System.Drawing.Text.TextRenderingHint.AntiAlias;
-                CoordinateDrawer coordinate = new CoordinateDrawer(backgroundImageGraphics, new Point(45, 25));
-                coordinate.DrawingX(pl_Canvas.Width - 5).DrawingY(pl_Canvas.Height - 10);
-
-                float xPivotLength = pl_Canvas.Width - 5 - 45;
-                float yPivotLength = pl_Canvas.Height - 10 - 25;
-                DrawDataPoint(backgroundImageGraphics, new PointF(45, 25), pl_Canvas.Width - 5, pl_Canvas.Height - 10);
-                panelGraphics.DrawImage(background, 0, 0);
-            }
+            DrawPivot();
         }
 
         private void ReadDataFromSource()
@@ -66,27 +63,102 @@ namespace ComputionWindows
 
         public void DrawDataPoint(Graphics graphics, PointF Origin, float XPivotLength, float YPivotLength)
         {
-            string path = @"E:\Workspace\C#\COD_Algorithm_Exp\COD_Core\NormalizeData\bin\Debug\newData.txt";
-            if(Owner is MainWindow)
+            List<ITuple> listToDraw;
+            
+            lock (lockRoot)
             {
-                MainWindow mainWindow = (MainWindow)Owner;
-                if(mainWindow.tb_dataFilePath.Text != "")
-                {
-                    path = mainWindow.tb_dataFilePath.Text;
-                }
+                listToDraw = dataPoints.Values.ToList();
             }
-            StreamReader sr = new StreamReader(path);
-            while (!sr.EndOfStream)
+            Brush burshForType;
+            ITuple tuple;
+            for (int i = 0; i < listToDraw.Count; i++)
             {
-                string line = sr.ReadLine();
-                string[] data = line.Split(' ');
-                graphics.FillEllipse(Brushes.Black, new RectangleF(((float)Convert.ToDouble(data[0])* XPivotLength)  + Origin.X, ( (float)Convert.ToDouble(data[1]) * YPivotLength) + Origin.Y, 5f, 5f));
+                tuple = listToDraw[i];
+                burshForType = (tuple.IsOutlier) ? Brushes.Red : Brushes.Black;
+                graphics.FillEllipse(burshForType, new RectangleF(((float)Convert.ToDouble(tuple.Data[0]) * XPivotLength) + Origin.X, ((float)Convert.ToDouble(tuple.Data[1]) * YPivotLength) + Origin.Y, 5f, 5f));
+            }
+        }
+
+        public void DrawPivot()
+        {
+            background = null;
+            background = new Bitmap(pl_Canvas.Width, pl_Canvas.Height);
+            backgroundImageGraphics = Graphics.FromImage(background);
+            using (backgroundImageGraphics)
+            {
+                backgroundImageGraphics.TextRenderingHint = System.Drawing.Text.TextRenderingHint.AntiAlias;
+                CoordinateDrawer coordinate = new CoordinateDrawer(backgroundImageGraphics, new Point(45, 25));
+                coordinate.DrawingX(pl_Canvas.Width - 5).DrawingY(pl_Canvas.Height - 10);
+                panelGraphics.DrawImage(background, 0, 0);
             }
         }
 
         public void OnEvent(IEvent anEvent)
         {
-            throw new NotImplementedException();
+            int tupleID = 0;
+            ITuple tuple;
+            switch (anEvent.Type)
+            {
+                case EventType.NewTupleArrive:
+                    tuple = (ITuple)anEvent.GetAttribute(EventAttributeType.Tuple);
+                    lock (lockRoot)
+                    {
+                        dataPoints.Add(tuple.ID, new COD_Base.Dynamic.Entity.Tuple(tuple));
+                    }
+                    break;
+                case EventType.InlierBecomeOutlier:
+                    tupleID = (int)anEvent.GetAttribute(EventAttributeType.TupleID);
+                    lock (lockRoot)
+                    {
+                        dataPoints[tupleID].IsOutlier = true;
+                    }
+                    break;
+                case EventType.OutlierBecomeInlier:
+                    tupleID = (int)anEvent.GetAttribute(EventAttributeType.TupleID);
+                    lock (lockRoot)
+                    {
+                        dataPoints[tupleID].IsOutlier = false;
+                    }
+                    break;
+                case EventType.OldTupleDepart:
+                    tupleID = (int)anEvent.GetAttribute(EventAttributeType.TupleID);
+                    lock (lockRoot)
+                    {
+                        if (dataPoints.ContainsKey(tupleID))
+                        {
+                            dataPoints.Remove(tupleID);
+                        }
+                        else
+                        {
+                            throw new Exception("No Such tuple In dataPoints");
+                        }
+                    }
+                    
+                   
+                    break;
+
+                case EventType.NoMoreTuple:
+
+                    break;
+            }
+        }
+
+        private void RefreshDataPointsTimer_Tick(object sender, EventArgs e)
+        {
+
+            panelGraphics.Clear(SystemColors.Control);
+            DrawPivot();
+            pointMap = new Bitmap(pl_Canvas.Width, pl_Canvas.Height);
+            Graphics pointMapGraphics = Graphics.FromImage(pointMap);
+            float xPivotLength = pl_Canvas.Width - 5 - 45;
+            float yPivotLength = pl_Canvas.Height - 10 - 25;
+            DrawDataPoint(pointMapGraphics, new PointF(45, 25), pl_Canvas.Width - 5, pl_Canvas.Height - 10);
+            panelGraphics.DrawImage(pointMap, 0, 0);
+        }
+
+        public void Reset()
+        {
+
         }
     }
 }

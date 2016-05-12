@@ -7,13 +7,27 @@ using COD_Base.Interface;
 
 namespace COD_Base.Dynamic.Entity
 {
-    class Tuple : ITuple
+    public class Tuple : ITuple
     {
         protected int _arrivalStep;
         protected List<double> _data;
         protected int _departStep;
         protected bool _isOutlier;
         protected int _dimension;
+
+        public Tuple(ITuple copy)
+        {
+            this.ArrivalStep = copy.ArrivalStep;
+            this.Data = new List<double>(copy.Data);
+            this.DepartStep = copy.DepartStep;
+            this.IsOutlier = copy.IsOutlier;
+            this.Dimension = copy.Dimension;
+        }
+
+        public Tuple()
+        {
+
+        }
 
         public int ArrivalStep
         {
@@ -83,12 +97,7 @@ namespace COD_Base.Dynamic.Entity
         {
             get
             {
-                throw new NotImplementedException();
-            }
-
-            set
-            {
-                throw new NotImplementedException();
+                return _arrivalStep;
             }
         }
 

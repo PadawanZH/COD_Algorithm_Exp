@@ -50,8 +50,9 @@ namespace COD_Base.Core
         /// <param name="anEvent"></param>
         public void SendEvent(IEvent anEvent)
         {
-            Thread handleEventThread = new Thread(new ParameterizedThreadStart(HandleEventThreadFunction));
-            handleEventThread.Start(anEvent);
+            HandleEventThreadFunction(anEvent);
+            /*Thread handleEventThread = new Thread(new ParameterizedThreadStart(HandleEventThreadFunction));
+            handleEventThread.Start(anEvent);*/
         }
 
         public void Subscribe(IListener listener, EventType eventType)
@@ -88,12 +89,15 @@ namespace COD_Base.Core
         public void HandleEventThreadFunction(Object anEvent)
         {
             IEvent eventToSend = (IEvent)anEvent;
-            List<IListener> listenerListToSend = _eventTable[eventToSend.Type];
-            foreach(IListener listener in listenerListToSend)
+            if (_eventTable.ContainsKey(eventToSend.Type))
             {
-                listener.OnEvent(eventToSend);
+                List<IListener> listenerListToSend = _eventTable[eventToSend.Type];
+                foreach (IListener listener in listenerListToSend)
+                {
+                    listener.OnEvent(eventToSend);
+                }
+                Logger.GetInstance().Info(ID, " SEND an event with type : " + eventToSend.Type.ToString());
             }
-            Logger.GetInstance().Info(ID, " SEND an event with type : " + eventToSend.Type.ToString());
         }
     }
 }

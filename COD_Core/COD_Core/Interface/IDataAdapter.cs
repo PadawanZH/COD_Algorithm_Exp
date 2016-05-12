@@ -22,5 +22,9 @@ namespace COD_Base.Interface
         /// </summary>
         /// <returns></returns>
         void Disposal();
+
+        bool IsReadyToRun();
+
+        bool HaveNextTuple();
     }
 }

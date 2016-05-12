@@ -26,7 +26,8 @@ namespace COD_Base.Interface
     {
         Message,
         Tuple,
-        Window
+        Window,
+        TupleID
     }
     public interface IEvent
     {

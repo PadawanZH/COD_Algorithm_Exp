@@ -8,7 +8,7 @@ using COD_Base.Interface;
 
 namespace COD_Base.Util
 {
-    class ExceptionUtil
+    public class ExceptionUtil
     {
         public static void SendErrorEventAndLog(string sendDestription, string errorMsg)
         {

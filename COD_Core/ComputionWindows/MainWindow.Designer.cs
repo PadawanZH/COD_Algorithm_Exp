@@ -53,7 +53,7 @@
             this.button1 = new System.Windows.Forms.Button();
             this.label5 = new System.Windows.Forms.Label();
             this.bt_simulationCompution_reset = new System.Windows.Forms.Button();
-            this.tb_simulationResult = new System.Windows.Forms.TextBox();
+            this.tb_SimulationResult = new System.Windows.Forms.TextBox();
             this.label9 = new System.Windows.Forms.Label();
             this.openFileDialog_assemblyPath = new System.Windows.Forms.OpenFileDialog();
             this.openFileDialog_propertyFile = new System.Windows.Forms.OpenFileDialog();
@@ -163,6 +163,7 @@
             this.tb_dataFilePath.ReadOnly = true;
             this.tb_dataFilePath.Size = new System.Drawing.Size(306, 21);
             this.tb_dataFilePath.TabIndex = 11;
+            this.tb_dataFilePath.Text = "E:\\Workspace\\C#\\COD_Algorithm_Exp\\COD_Core\\NormalizeData\\bin\\Debug\\newData.txt";
             // 
             // bt_dataFilePath_scan
             // 
@@ -260,7 +261,7 @@
             this.gb_simulationInfo.Controls.Add(this.button1);
             this.gb_simulationInfo.Controls.Add(this.label5);
             this.gb_simulationInfo.Controls.Add(this.bt_simulationCompution_reset);
-            this.gb_simulationInfo.Controls.Add(this.tb_simulationResult);
+            this.gb_simulationInfo.Controls.Add(this.tb_SimulationResult);
             this.gb_simulationInfo.Controls.Add(this.label9);
             this.gb_simulationInfo.Controls.Add(this.bt_simulationComputing);
             this.gb_simulationInfo.Location = new System.Drawing.Point(12, 497);
@@ -325,6 +326,7 @@
             this.tb_SlideSpan.Name = "tb_SlideSpan";
             this.tb_SlideSpan.Size = new System.Drawing.Size(74, 21);
             this.tb_SlideSpan.TabIndex = 3;
+            this.tb_SlideSpan.Text = "10";
             // 
             // label7
             // 
@@ -341,6 +343,7 @@
             this.tb_WindowSize.Name = "tb_WindowSize";
             this.tb_WindowSize.Size = new System.Drawing.Size(74, 21);
             this.tb_WindowSize.TabIndex = 1;
+            this.tb_WindowSize.Text = "1000";
             // 
             // label6
             // 
@@ -387,13 +390,13 @@
             this.bt_simulationCompution_reset.UseVisualStyleBackColor = false;
             this.bt_simulationCompution_reset.Click += new System.EventHandler(this.bt_simulationCompution_reset_Click);
             // 
-            // tb_simulationResult
+            // tb_SimulationResult
             // 
-            this.tb_simulationResult.Location = new System.Drawing.Point(127, 207);
-            this.tb_simulationResult.Name = "tb_simulationResult";
-            this.tb_simulationResult.ReadOnly = true;
-            this.tb_simulationResult.Size = new System.Drawing.Size(407, 21);
-            this.tb_simulationResult.TabIndex = 27;
+            this.tb_SimulationResult.Location = new System.Drawing.Point(127, 207);
+            this.tb_SimulationResult.Name = "tb_SimulationResult";
+            this.tb_SimulationResult.ReadOnly = true;
+            this.tb_SimulationResult.Size = new System.Drawing.Size(407, 21);
+            this.tb_SimulationResult.TabIndex = 27;
             // 
             // label9
             // 
@@ -464,6 +467,7 @@
             this.tb_DataDimension.Name = "tb_DataDimension";
             this.tb_DataDimension.Size = new System.Drawing.Size(74, 21);
             this.tb_DataDimension.TabIndex = 2;
+            this.tb_DataDimension.Text = "2";
             // 
             // label11
             // 
@@ -551,7 +555,7 @@
         private System.Windows.Forms.GroupBox gb_modelInfo;
         private System.Windows.Forms.GroupBox gb_simulationInfo;
         private System.Windows.Forms.Label label9;
-        private System.Windows.Forms.TextBox tb_simulationResult;
+        private System.Windows.Forms.TextBox tb_SimulationResult;
         private System.Windows.Forms.Button bt_simulationCompution_reset;
         private System.Windows.Forms.OpenFileDialog openFileDialog_assemblyPath;
         private System.Windows.Forms.OpenFileDialog openFileDialog_propertyFile;

@@ -12,7 +12,7 @@ namespace NormalizeData
         static void Main(string[] args)
         {
             NormalizedData nd = new NormalizedData();
-            nd.GenerateData(System.Environment.CurrentDirectory + "\\newData.txt", 2, 100);
+            nd.GenerateData(System.Environment.CurrentDirectory + "\\newData.txt", 2, 100000);
         }
 
         public void NormalizedExistingData(string sourceFile, string targetFile, int dimension)

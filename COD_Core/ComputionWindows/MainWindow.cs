@@ -10,7 +10,7 @@ using COD_Base.Core;
 using COD_Base.Interface;
 
 namespace ComputionWindows {
-    public partial class MainWindow : Form {
+    public partial class MainWindow : Form, IListener {
 
         
         public Dictionary<string, string> modelInfo = new Dictionary<string, string>();
@@ -21,14 +21,17 @@ namespace ComputionWindows {
         public bool isRunSimulation = false;
 
         protected AlgorithmMgr algorithmHandler;
-        protected Configuration configuration;
+
+        private Form displayField;
 
         //用以标记”添加算法“按钮是否可以按下
         private bool isDLLPathSet = false;
         public MainWindow() {
             InitializeComponent();
             algorithmHandler = new AlgorithmMgr();
-            configuration = new Configuration();
+
+            EventType[] acceptedEventTypeList = { EventType.NoMoreTuple , EventType.Error , EventType.OldTupleDepart};
+            EventDistributor.GetInstance().SubcribeListenerWithFullAcceptedTypeList(this, acceptedEventTypeList);
         }
 
         
@@ -143,7 +146,7 @@ namespace ComputionWindows {
                     } else if (modelInfo["algorithm"] == null || modelInfo["algorithm"] == "") {
                         MessageBox.Show("算法标准引擎类信息不得为空！！！");
                     } else {
-                        if (algorithmHandler.AddAlgorithm(modelInfo)) {
+                        if (algorithmHandler.AssembleAlgorithmInstance(modelInfo)) {
 
                             MessageBox.Show("算法信息覆盖成功");
                         } else {
@@ -151,7 +154,6 @@ namespace ComputionWindows {
                             MessageBox.Show("算法信息覆盖失败！！！！");
                         }
                     }
-                    
                 } 
             } else {
 
@@ -162,7 +164,7 @@ namespace ComputionWindows {
                 } else if (modelInfo["algorithm"] == null || modelInfo["algorithm"] == "") {
                     MessageBox.Show("算法标准引擎类信息不得为空！！！");
                 } else {
-                    if (algorithmHandler.AddAlgorithm(modelInfo)) {
+                    if (algorithmHandler.AssembleAlgorithmInstance(modelInfo)) {
                         this.bt_modelInfo_add.BackColor = Color.LightGreen;
                         MessageBox.Show("算法信息添加成功" + algorithmHandler._algorithm.Description);
                         isAlogrithmAdd = true;
@@ -198,7 +200,7 @@ namespace ComputionWindows {
 
        
 
-        #region 添加算法参数信息
+        #region 添加数据及信息
 
         private void bt_propertyFilePath_scan_Click(object sender, EventArgs e) {//保存参数文件路径
             openFileDialog_propertyFile.Filter = "*.dll,*.txt,*.swm|*.dll;*.txt;*.swm";
@@ -225,39 +227,42 @@ namespace ComputionWindows {
         #region 仿真计算
 
         private void bt_simulationComputing_Click(object sender, EventArgs e) {//触发仿真计算
-            SetupConfiguration();
-
-            if(tb_DataDimension.Text == "2")
+            Configuration config = SetupConfiguration();
+            if(config != null)
             {
-                Form displayField = new _2D_DisplayField();
-                displayField.Show(this);
-            }
-            /*bt_modelInfo_add.Enabled = false;
+                algorithmHandler.InitComponent(config);
+                if (algorithmHandler.IsReadyToRun())
+                {
+                    //二维数据可以可视化
+                    if (tb_DataDimension.Text == "2")
+                    {
+                        if(displayField != null)
+                        {
+                            displayField.Enabled = false;
+                            displayField.Visible = false;
+                            displayField.Dispose();
+                        }
+                        displayField = new _2D_DisplayField();
+                        displayField.Show(this);
+                    }
 
-            if (runner.AddSimulationProperties(TriggerTime)) {
-
-                if (runner.Run()) {
-                    MessageBox.Show("仿真运行成功~~~");
-                    tb_simulationResult.Text = "成功";
-                    bt_simulationComputing.BackColor = Color.LightGreen;
-                } else {
-                    MessageBox.Show("仿真运行失败！！！！");
-                    tb_simulationResult.Text = "失败";
-                    bt_simulationComputing.BackColor = Color.Red;
+                    algorithmHandler.Start();
+                    return;
                 }
-
-            } else {
-                MessageBox.Show("仿真运行参数设置失败！！！！\n1. 请检查算法是否正确添加\n2. 请检查参数是否正确添加");
-                bt_simulationComputing.BackColor = Color.Red;
-            }*/
-
+            }
+            else
+            {
+                ShowErrorDialog("配置初始化失败，请检查是否有必要的参数信息没有填写");
+            }
         }
 
-        private bool SetupConfiguration()
+        private Configuration SetupConfiguration()
         {
             if (    tb_dataFilePath.Text != "" && tb_DataDimension.Text != "" && tb_DataDelimiter.Text != "" 
                 && tb_WindowSize.Text != "" && tb_SlideSpan.Text != "" && tb_QueryRange.Text != "" && tb_ThesholdK.Text != "")
             {
+                Configuration configuration = new Configuration();
+
                 configuration.SetProperty(PropertiesType.DataFilePath, tb_dataFilePath.Text);
                 configuration.SetProperty(PropertiesType.DataDimension, Convert.ToInt32(tb_DataDimension.Text));
                 configuration.SetProperty(PropertiesType.Delimiter, Convert.ToChar(tb_DataDelimiter.Text));
@@ -265,13 +270,23 @@ namespace ComputionWindows {
                 configuration.SetProperty(PropertiesType.SlideSpan, Convert.ToInt32(tb_SlideSpan.Text));
                 configuration.SetProperty(PropertiesType.QueryRange, Convert.ToDouble(tb_QueryRange.Text));
                 configuration.SetProperty(PropertiesType.KNeighbourThreshold, Convert.ToInt32(tb_ThesholdK.Text));
-                return true;
+                return configuration;
             }
             else
             {
-                MessageBox.Show("配置初始化失败，请检查是否有必要的参数信息没有填写");
-                return false;
+                return null;
             }
+        }
+
+        private void ShowResultDialog()
+        {
+            MessageBox.Show("运行成功");
+        }
+
+        private void ShowErrorDialog(string errorMsg)
+        {
+            MessageBox.Show(errorMsg);
+            tb_SimulationResult.Text = "运行出现问题";
         }
 
         private void bt_simulationCompution_reset_Click(object sender, EventArgs e) {//重置仿真计算有关参数
@@ -280,7 +295,15 @@ namespace ComputionWindows {
 
         public void OnEvent(IEvent anEvent)
         {
-            throw new NotImplementedException();
+            switch (anEvent.Type)
+            {
+                case EventType.NoMoreTuple:
+                    ShowResultDialog();
+                    break;
+                case EventType.Error:
+                    ShowErrorDialog((string)anEvent.GetAttribute(EventAttributeType.Message));
+                    break;
+            }
         }
 
         #endregion

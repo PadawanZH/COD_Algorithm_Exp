@@ -21,7 +21,7 @@ namespace COD_Base.Interface
         bool IsOutlier { get; set; }
         int Dimension { get; set; }
 
-        int ID { get; set; }
+        int ID { get;}
 
         /// <summary>
         /// 各维度的数据，以下标作为一个维度
