@@ -247,6 +247,8 @@ namespace ComputionWindows {
                     }
 
                     algorithmHandler.Start();
+                    tb_SimulationResult.Text = "";
+                    StateUpdateTimer.Start();
                     return;
                 }
             }
@@ -280,6 +282,7 @@ namespace ComputionWindows {
 
         private void ShowResultDialog()
         {
+            tb_SimulationResult.Text = "成功";
             MessageBox.Show("运行成功");
         }
 
@@ -307,6 +310,14 @@ namespace ComputionWindows {
         }
 
         #endregion
+
+        private void StateUpdateTimer_Tick(object sender, EventArgs e)
+        {
+            if(tb_SimulationResult.Text != "成功")
+            {
+                tb_SimulationResult.Text = "当前处理的Tuple数" + algorithmHandler.processedTupleCount.ToString();
+            }
+        }
     }
 }
 

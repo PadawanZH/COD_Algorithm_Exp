@@ -68,6 +68,7 @@
             this.InputAreaTip = new System.Windows.Forms.ToolTip(this.components);
             this.BackgroundPanel = new System.Windows.Forms.Panel();
             this.toolTip1 = new System.Windows.Forms.ToolTip(this.components);
+            this.StateUpdateTimer = new System.Windows.Forms.Timer(this.components);
             this.gb_modelInfo.SuspendLayout();
             this.gb_simulationInfo.SuspendLayout();
             this.RunAlgConfigGroup.SuspendLayout();
@@ -517,6 +518,10 @@
             this.BackgroundPanel.Size = new System.Drawing.Size(599, 778);
             this.BackgroundPanel.TabIndex = 28;
             // 
+            // StateUpdateTimer
+            // 
+            this.StateUpdateTimer.Tick += new System.EventHandler(this.StateUpdateTimer_Tick);
+            // 
             // MainWindow
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 12F);
@@ -588,6 +593,7 @@
         private System.Windows.Forms.TextBox tb_DataDimension;
         private System.Windows.Forms.Label label11;
         private System.Windows.Forms.ComboBox cb_ClassNames;
+        private System.Windows.Forms.Timer StateUpdateTimer;
     }
 }
 
