@@ -147,7 +147,8 @@ namespace ContinuousOutlierDetection
                 }
                 else if(x.eventTrigger.triggerTupleID == y.eventTrigger.triggerTupleID)
                 {
-                    return 0;
+                    //有序集合中不能重复键值，故赋值此情况为1，因为当eventTime和TriggerTupleID都一样时，排序就不重要了，但是不能相等，否则在sortedset里会被替换
+                    return 1;
                 }
                 else
                 {
@@ -310,7 +311,7 @@ namespace ContinuousOutlierDetection
         public void Arrive(CODTuple newCODTuple, int currentStep)
         {
             long st = DateTime.Now.Ticks;
-            SortedSet<CODTuple> neighbours = RangeQuery(newCODTuple.tuple, range, neighbourThreshold);
+            List<CODTuple> neighbours = RangeQuery(newCODTuple.tuple, range, neighbourThreshold);
             TimeUsedByQueryRange += (DateTime.Now.Ticks - st) / (10000000.0);
             for (int i = 0; i < neighbours.Count; i++)
             {
@@ -520,14 +521,16 @@ namespace ContinuousOutlierDetection
             CODEventQueue = null;
         }
 
-        protected SortedSet<CODTuple> RangeQuery(ITuple newTuple, double range, int neighbourThreshold)
+        protected List<CODTuple> RangeQuery(ITuple newTuple, double range, int neighbourThreshold)
         {
             double distance;
             double qurc_rang = range * range;
             bool flag;
-            SortedSet<CODTuple> neighbours = new SortedSet<CODTuple>(new CODTupleComparorByExpTime());
-            foreach (CODTuple codTuple in window)
+            CODTuple codTuple;
+            List<CODTuple> neighbours = new List<CODTuple>();
+            for (int index = window.Count-1; index >= 0; index--)
             {
+                codTuple = window.ElementAt(index);
                 flag = false;
                 distance = 0;
                 for (int i = 0; i < codTuple.tuple.Dimension; i++)
@@ -595,7 +598,7 @@ namespace ContinuousOutlierDetection
             }
         }
 
-        public void AssignKNearestPreceedingNeighboursToTuple(CODTuple newTuple, SortedSet<CODTuple> neighbours)
+        public void AssignKNearestPreceedingNeighboursToTuple(CODTuple newTuple, List<CODTuple> neighbours)
         {
             Dictionary<int, int> k_NearestNeighbour = new Dictionary<int, int>();
             for (int i = 0; i < neighbourThreshold && i < neighbours.Count; i++)
