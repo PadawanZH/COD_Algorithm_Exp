@@ -8,6 +8,8 @@ namespace COD_Base.Interface
 {
     public interface IWindow
     {
-        
+        bool ShouldWindowSlide();
+
+        void SlideWindow();
     }
 }

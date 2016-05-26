@@ -50,6 +50,8 @@ namespace COD_Base.Core
         public double avgOutlierRateAgainstWindowSize;
         public int windowSlideCount;
         public int outliersCountInCurrentWindow;
+        public double NumberOfCODList = 0;
+
 
         protected int windowSize;
 
@@ -80,7 +82,7 @@ namespace COD_Base.Core
 
         protected void Init()
         {
-            EventType[] acceptedEventTypeList = { EventType.NewTupleArrive, EventType.NoMoreTuple, EventType.InlierBecomeOutlier, EventType.OutlierBecomeInlier, EventType.WindowSlide };
+            EventType[] acceptedEventTypeList = { EventType.NewTupleArrive, EventType.NoMoreTuple, EventType.InlierBecomeOutlier, EventType.OutlierBecomeInlier, EventType.WindowSlide, EventType.OldTupleDepart };
             EventDistributor.GetInstance().SubcribeListenerWithFullAcceptedTypeList(this, acceptedEventTypeList);
 
             processedTupleCount = 0;
@@ -243,6 +245,7 @@ namespace COD_Base.Core
             switch (anEvent.Type)
             {
                 case EventType.NewTupleArrive:
+                    NumberOfCODList += _algorithm.GetEventListCount();
                     if (processedTupleCount == 0)
                     {
                         startTime = System.DateTime.Now.Ticks;
@@ -267,11 +270,18 @@ namespace COD_Base.Core
                     }
                     break;
 
+                case EventType.OldTupleDepart:
+                    ITuple oldTuple = (ITuple)anEvent.GetAttribute(EventAttributeType.Tuple);
+                    if(oldTuple.IsOutlier == true)
+                    {
+                        outliersCountInCurrentWindow--;
+                    }
+                    break;
+
                 case EventType.WindowSlide:
                     windowSlideCount++;
                     double outlierRateAgainstWindowSize = outliersCountInCurrentWindow / (double)windowSize;
                     avgOutlierRateAgainstWindowSize += outlierRateAgainstWindowSize;
-                    outliersCountInCurrentWindow = 0;
                     break;
 
                 case EventType.NoMoreTuple:
@@ -285,6 +295,7 @@ namespace COD_Base.Core
                         avgOutlierRateAgainstWindowSize = (double)outliersCountInCurrentWindow / (double)processedTupleCount;
                     }
                     tupleRate = (double)processedTupleCount / (double)( (endTime - startTime) / 10000000.0);
+                    NumberOfCODList = (double)NumberOfCODList / (double)processedTupleCount;
                     break;
             }
         }

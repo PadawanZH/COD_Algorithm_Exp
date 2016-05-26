@@ -294,6 +294,7 @@
             this.tb_ThesholdK.Name = "tb_ThesholdK";
             this.tb_ThesholdK.Size = new System.Drawing.Size(74, 21);
             this.tb_ThesholdK.TabIndex = 7;
+            this.tb_ThesholdK.Text = "10";
             // 
             // label8
             // 
@@ -310,6 +311,7 @@
             this.tb_QueryRange.Name = "tb_QueryRange";
             this.tb_QueryRange.Size = new System.Drawing.Size(74, 21);
             this.tb_QueryRange.TabIndex = 5;
+            this.tb_QueryRange.Text = "0.089";
             // 
             // label10
             // 
@@ -451,6 +453,7 @@
             this.tb_DataDelimiter.Name = "tb_DataDelimiter";
             this.tb_DataDelimiter.Size = new System.Drawing.Size(74, 21);
             this.tb_DataDelimiter.TabIndex = 4;
+            this.tb_DataDelimiter.Text = " ";
             // 
             // label14
             // 

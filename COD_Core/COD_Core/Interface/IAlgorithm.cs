@@ -22,5 +22,7 @@ namespace COD_Base.Interface
         void Initialize(IConfiguration config);
 
         bool IsReadyToRun();
+
+        int GetEventListCount();
     }
 }

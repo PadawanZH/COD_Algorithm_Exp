@@ -12,20 +12,20 @@ namespace COD_Base.Core
     /// <summary>
     /// 利用生产者消费者提供tuple
     /// </summary>
-    class StreamSimulator : IStreamSimulator
+    class StreamManager : IStreamManager
     {
-        private static StreamSimulator instance;
-        private StreamSimulator()
+        private static StreamManager instance;
+        private StreamManager()
         {
             isRunningTimerMode = false;
             ToDoBuffer = new Queue<ITuple>();
         }
 
-        public static StreamSimulator GetInstance()
+        public static StreamManager GetInstance()
         {
             if(instance == null)
             {
-                instance = new StreamSimulator();
+                instance = new StreamManager();
                 instance.Initialize();
             }
             return instance;

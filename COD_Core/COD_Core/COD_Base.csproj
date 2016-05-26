@@ -61,7 +61,7 @@
     <Compile Include="Core\Configuration.cs" />
     <Compile Include="Util\ExceptionUtil.cs" />
     <Compile Include="Util\Logger.cs" />
-    <Compile Include="Core\StreamSimulator.cs" />
+    <Compile Include="Core\StreamManager.cs" />
     <Compile Include="Interface\IAlgorithmManager.cs" />
     <Compile Include="Interface\IConfiguration.cs" />
     <Compile Include="Interface\IDataAdapter.cs" />
@@ -69,7 +69,7 @@
     <Compile Include="Interface\IExpMetrics.cs" />
     <Compile Include="Interface\ITuple.cs" />
     <Compile Include="Interface\IAlgorithm.cs" />
-    <Compile Include="Interface\IStreamSimulator.cs" />
+    <Compile Include="Interface\IStreamManager.cs" />
     <Compile Include="Interface\ITupleSet.cs" />
     <Compile Include="Interface\IEvent.cs" />
     <Compile Include="Interface\IListener.cs" />

@@ -9,7 +9,7 @@ namespace COD_Base.Interface
     /// <summary>
     /// IStreamController作为流数据模拟的管理模块,接收NoMoreTuple的事件
     /// </summary>
-    public interface IStreamSimulator : IListener
+    public interface IStreamManager : IListener
     {
         /// <summary>
         /// 是否已经处理完成，当该项为true，整个算法的处理进程应当完成

@@ -8,9 +8,9 @@ namespace COD_Base.Interface
 {
     /// <summary>
     /// <para>维护一个HashTable，存储EventType-Target的k-v对，方便Event分发</para>
-    /// <para>负责接收从<see cref="IStreamSimulator"/>传来的Event,并根据HashTable的连接调用响应接口函数。</para>
+    /// <para>负责接收从<see cref="IStreamManager"/>传来的Event,并根据HashTable的连接调用响应接口函数。</para>
     /// 
-    /// <para>可以考虑单例模式的实现，因为一般情况下只允许一个<see cref="IEventDIstributor"/>和<see cref="IStreamSimulator"/>存在,并且单例模式有利于其他组件找到上述两个类的单例引用</para>
+    /// <para>可以考虑单例模式的实现，因为一般情况下只允许一个<see cref="IEventDIstributor"/>和<see cref="IStreamManager"/>存在,并且单例模式有利于其他组件找到上述两个类的单例引用</para>
     /// </summary>
     public interface IEventDIstributor
     {
