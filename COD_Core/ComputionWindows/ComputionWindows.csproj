@@ -63,6 +63,12 @@
     </Compile>
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="ResultReport.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="ResultReport.Designer.cs">
+      <DependentUpon>ResultReport.cs</DependentUpon>
+    </Compile>
     <EmbeddedResource Include="2D_DisplayField.resx">
       <DependentUpon>2D_DisplayField.cs</DependentUpon>
     </EmbeddedResource>
@@ -79,6 +85,9 @@
       <DependentUpon>Resources.resx</DependentUpon>
       <DesignTime>True</DesignTime>
     </Compile>
+    <EmbeddedResource Include="ResultReport.resx">
+      <DependentUpon>ResultReport.cs</DependentUpon>
+    </EmbeddedResource>
     <None Include="app.config" />
     <None Include="Properties\Settings.settings">
       <Generator>SettingsSingleFileGenerator</Generator>

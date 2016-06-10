@@ -8,6 +8,7 @@ using System.Text;
 using System.Windows.Forms;
 using COD_Base.Core;
 using COD_Base.Interface;
+using System.Threading;
 
 namespace ComputionWindows {
     public partial class MainWindow : Form, IListener {
@@ -245,10 +246,15 @@ namespace ComputionWindows {
                         displayField = new _2D_DisplayField();
                         displayField.Show(this);
                     }
+                    Thread algorithmRunningThread = new Thread(algorithmHandler.Start);
+                    algorithmRunningThread.IsBackground = true;
+                    algorithmRunningThread.Start();
 
-                    algorithmHandler.Start();
                     tb_SimulationResult.Text = "";
                     StateUpdateTimer.Start();
+
+                    bt_simulationComputing.Enabled = false;
+                    bt_modelInfo_add.Enabled = false;
                     return;
                 }
             }
@@ -282,17 +288,21 @@ namespace ComputionWindows {
 
         private void ShowResultDialog()
         {
-            tb_SimulationResult.Text = "成功";
-            MessageBox.Show("运行成功");
+            string configText = "范围查询R = " + tb_QueryRange.Text + "\r\n邻居阈值k = " + tb_ThesholdK.Text + "\r\n窗口大小 : " + tb_WindowSize.Text + "\r\n滑动区间 : " + tb_SlideSpan.Text;
+            string streamText = "当前处理过的Tuple数 : " + algorithmHandler.processedTupleCount + "\r\n当前窗口滑动数 : " + algorithmHandler.windowSlideCount + "\r\n当前窗口中异常值数量 : " + algorithmHandler.outliersCountInCurrentWindow;
+            string resultText = "Tuple处理速率为(tuple/s) : " + algorithmHandler.GetTupleRate() + "\r\n平均窗口中异常值比例 : " + algorithmHandler.avgOutlierRateAgainstWindowSize + "\r\n历史Outlier数量 : " + algorithmHandler.outlierHistoryCount;
+            ResultReport resultDialog = new ResultReport(configText,streamText,resultText);
+            resultDialog.Show();
         }
 
         private void ShowErrorDialog(string errorMsg)
         {
             MessageBox.Show(errorMsg);
-            tb_SimulationResult.Text = "运行出现问题";
         }
 
         private void bt_simulationCompution_reset_Click(object sender, EventArgs e) {//重置仿真计算有关参数
+            bt_modelInfo_add.Enabled = true;
+            bt_simulationComputing.Enabled = true;
             bt_modelInfo_add.Enabled = true;
         }
 
@@ -301,7 +311,7 @@ namespace ComputionWindows {
             switch (anEvent.Type)
             {
                 case EventType.NoMoreTuple:
-                    ShowResultDialog();
+                    StateUpdateTimer.Stop();
                     break;
                 case EventType.Error:
                     ShowErrorDialog((string)anEvent.GetAttribute(EventAttributeType.Message));
@@ -317,6 +327,11 @@ namespace ComputionWindows {
             {
                 tb_SimulationResult.Text = "当前处理的Tuple数" + algorithmHandler.processedTupleCount.ToString();
             }
+        }
+
+        private void ShowResult_Click(object sender, EventArgs e)
+        {
+            ShowResultDialog();
         }
     }
 }

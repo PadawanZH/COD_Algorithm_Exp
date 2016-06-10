@@ -138,7 +138,7 @@ namespace ComputionWindows
                     break;
 
                 case EventType.NoMoreTuple:
-
+                    RefreshDataPointsTimer.Stop();
                     break;
             }
         }

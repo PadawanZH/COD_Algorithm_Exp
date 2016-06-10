@@ -36,6 +36,13 @@ namespace ContinuousOutlierDetection
                     minTime = kvp.Value;
                     PreceedingNeighborID = kvp.Key;
                 }
+                else if (minTime == kvp.Value)
+                {
+                    if(PreceedingNeighborID > kvp.Key)
+                    {
+                        PreceedingNeighborID = kvp.Key;
+                    }
+                }
             }
             return new CODEventTrigger(minTime,PreceedingNeighborID);
         }
@@ -148,7 +155,15 @@ namespace ContinuousOutlierDetection
                 else if(x.eventTrigger.triggerTupleID == y.eventTrigger.triggerTupleID)
                 {
                     //有序集合中不能重复键值，故赋值此情况为1，因为当eventTime和TriggerTupleID都一样时，排序就不重要了，但是不能相等，否则在sortedset里会被替换
-                    return 1;
+                    if(x.codTuple.tuple.ArrivalStep == y.codTuple.tuple.ArrivalStep)
+                    {
+                        return 0;
+                    }
+                    else
+                    {
+                        return 1;
+                    }
+
                 }
                 else
                 {
@@ -198,7 +213,7 @@ namespace ContinuousOutlierDetection
         /// <summary>
         /// 注意，问题在于CODEvent不能重复，就要保证CODEvent中的CODTuple不能是一样的
         /// </summary>
-        public SortedSet<CODEvent> CODEventQueue;
+        public List<CODEvent> CODEventQueue;
 
         protected int _slideSpan;
         protected int _windowSize;
@@ -236,7 +251,7 @@ namespace ContinuousOutlierDetection
                 neighbourThreshold = (int)config.GetProperty(PropertiesType.KNeighbourThreshold);
 
                 window = new Queue<CODTuple>();
-                CODEventQueue = new SortedSet<CODEvent>(new CODEventComparor());
+                CODEventQueue = new List<CODEvent>();
                 //CODEventQueue = new SortedSet<CODEvent>(new CODEventOriginalComparor()); 
             }
             else
@@ -643,7 +658,6 @@ namespace ContinuousOutlierDetection
         }
 
         #region Functions For EventQueue
-        public int insertCount = 0;
         protected void Insert(CODTuple q)
         {
             /*if (q.numberOfSucceedingNeighbour > neighbourThreshold)
@@ -654,7 +668,7 @@ namespace ContinuousOutlierDetection
             if(newCODEvent.eventTrigger.eventTime != int.MaxValue)
             {
                 CODEventQueue.Add(newCODEvent);
-                insertCount++;
+                CODEventQueue.Sort(new CODEventComparor());
             }
         }
 
@@ -675,7 +689,7 @@ namespace ContinuousOutlierDetection
             if (CODEventQueue.Count != 0)
             {
                 CODEvent minEvent = CODEventQueue.ElementAt(0);
-                CODEventQueue.Remove(minEvent);
+                CODEventQueue.RemoveAt(0);
                 return minEvent;
             }
             else

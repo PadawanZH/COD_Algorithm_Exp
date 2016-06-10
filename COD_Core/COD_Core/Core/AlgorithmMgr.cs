@@ -48,6 +48,8 @@ namespace COD_Base.Core
         public double tupleRate;
         public int outlierHistoryCount;
         public double avgOutlierRateAgainstWindowSize;
+        //用于总计所有窗口的OutlierRate，以便每次求平均给avgOutlierRateAgainstWindowSize
+        public double totalOutlierRateAgainstWindowSize;
         public int windowSlideCount;
         public int outliersCountInCurrentWindow;
         public double NumberOfCODList = 0;
@@ -88,6 +90,7 @@ namespace COD_Base.Core
             processedTupleCount = 0;
             outlierHistoryCount = 0;
             avgOutlierRateAgainstWindowSize = 0;
+            totalOutlierRateAgainstWindowSize = 0;
             windowSlideCount = 0;
             windowSize = 0;
             outliersCountInCurrentWindow = 0;
@@ -200,8 +203,13 @@ namespace COD_Base.Core
         /// </summary>
         public void Start()
         {
-            Thread algorithmRunningThread = new Thread(RunAlgFunc);
-            algorithmRunningThread.Start();
+            while (_dataSource.HaveNextTuple())
+            {
+                ITuple tuple = _dataSource.GetNextTuple();
+                _algorithm.ReceiveNewTupe(tuple);
+            }
+            //触发NoMoreTuple事件
+            _dataSource.GetNextTuple();
         }
 
         public void RunAlgFunc()
@@ -238,6 +246,12 @@ namespace COD_Base.Core
             {
                 Directory.SetCurrentDirectory(oldDirectory);
             }
+        }
+
+        public double GetTupleRate()
+        {
+            long peekTime = DateTime.Now.Ticks;
+            return (double)processedTupleCount / (double)((peekTime - startTime) / 10000000.0);
         }
 
         public void OnEvent(IEvent anEvent)
@@ -281,16 +295,13 @@ namespace COD_Base.Core
                 case EventType.WindowSlide:
                     windowSlideCount++;
                     double outlierRateAgainstWindowSize = outliersCountInCurrentWindow / (double)windowSize;
-                    avgOutlierRateAgainstWindowSize += outlierRateAgainstWindowSize;
+                    totalOutlierRateAgainstWindowSize += outlierRateAgainstWindowSize;
+                    avgOutlierRateAgainstWindowSize = totalOutlierRateAgainstWindowSize / (double)windowSlideCount;
                     break;
 
                 case EventType.NoMoreTuple:
                     endTime = DateTime.Now.Ticks;
-                    if (windowSlideCount > 0)
-                    {
-                        avgOutlierRateAgainstWindowSize /= (double)windowSlideCount;
-                    }
-                    else
+                    if (windowSlideCount == 0)
                     {
                         avgOutlierRateAgainstWindowSize = (double)outliersCountInCurrentWindow / (double)processedTupleCount;
                     }
